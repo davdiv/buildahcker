@@ -2,7 +2,7 @@
   "entryPoints": ["src/index.ts"],
   "excludeInternal": true,
   "excludePrivate": true,
-  "out": "docs",
+  "out": "doc",
   "treatValidationWarningsAsErrors": true,
   "visibilityFilters": {}
 }
