@@ -24,7 +24,7 @@ import {
 
 const createImage = async () => {
   const builder = await ImageBuilder.from("alpine:latest", {
-    logger,
+    logger: process.stdout,
     cache: new FileSystemCache("buildahcker-cache"),
   });
   await builder.executeStep([
@@ -33,7 +33,7 @@ const createImage = async () => {
       "etc/issue": new MemFile({
         content: "Hello",
       }),
-      app: new DiskLocation(srcDir, {
+      app: new DiskLocation("./app", {
         overrideAttributes: { uid: 1, gid: 2 },
       }),
     }),
