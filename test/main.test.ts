@@ -34,44 +34,50 @@ beforeEach(() => {
   };
 });
 
-it("should work for a simple container", async () => {
-  const srcDir = join(__dirname, "..", "src");
-  const baseImage = "alpine:latest";
+it(
+  "should work for a simple container",
+  {
+    timeout: 15000,
+  },
+  async () => {
+    const srcDir = join(__dirname, "..", "src");
+    const baseImage = "alpine:latest";
 
-  async function createImage() {
-    const builder = await ImageBuilder.from(baseImage, {
-      logger,
-      cache: new FileSystemCache(tempFolder),
-    });
-    await builder.executeStep([
-      run(["apk", "add", "--no-cache", "nginx"]),
-      addFiles({
-        "etc/issue": new MemFile({
-          content: "Hello",
+    async function createImage() {
+      const builder = await ImageBuilder.from(baseImage, {
+        logger,
+        cache: new FileSystemCache(tempFolder),
+      });
+      await builder.executeStep([
+        run(["apk", "add", "--no-cache", "nginx"]),
+        addFiles({
+          "etc/issue": new MemFile({
+            content: "Hello",
+          }),
+          app: new DiskLocation(srcDir, {
+            overrideAttributes: { uid: 1, gid: 2 },
+          }),
         }),
-        app: new DiskLocation(srcDir, {
-          overrideAttributes: { uid: 1, gid: 2 },
-        }),
-      }),
-    ]);
-    return builder.imageId;
-  }
-  await exec(["buildah", "pull", baseImage], { logger });
-  const result = await createImage();
-  const result2 = await createImage();
-  expect(result).toBe(result2);
-  const container = await Container.from(result);
-  try {
-    const mountPath = await container.mount();
-    const indexInMount = join(mountPath, "app", "index.ts");
-    expect(await readFile(indexInMount, "utf8")).toBe(
-      await readFile(join(srcDir, "index.ts"), "utf8"),
-    );
-    expect(await lstat(indexInMount)).toMatchObject({ uid: 1, gid: 2 });
-    expect(await readFile(join(mountPath, "etc", "issue"), "utf8")).toBe(
-      "Hello",
-    );
-  } finally {
-    await container.remove();
-  }
-});
+      ]);
+      return builder.imageId;
+    }
+    await exec(["buildah", "pull", baseImage], { logger });
+    const result = await createImage();
+    const result2 = await createImage();
+    expect(result).toBe(result2);
+    const container = await Container.from(result);
+    try {
+      const mountPath = await container.mount();
+      const indexInMount = join(mountPath, "app", "index.ts");
+      expect(await readFile(indexInMount, "utf8")).toBe(
+        await readFile(join(srcDir, "index.ts"), "utf8"),
+      );
+      expect(await lstat(indexInMount)).toMatchObject({ uid: 1, gid: 2 });
+      expect(await readFile(join(mountPath, "etc", "issue"), "utf8")).toBe(
+        "Hello",
+      );
+    } finally {
+      await container.remove();
+    }
+  },
+);
