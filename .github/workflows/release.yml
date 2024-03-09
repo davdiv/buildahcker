@@ -1,0 +1,54 @@
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        required: true
+        description: Version number (x.y.z)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    concurrency:
+      group: "release"
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+      - run: npm ci
+      - run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions@github.com
+          npm version ${{ inputs.version }}
+        if: inputs.version != 'doconly'
+      - run: git show HEAD
+      - run: npm run ci
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "doc"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - run: git push origin main v${{ inputs.version }}
+        if: inputs.version != 'doconly'
+      - run: |
+          npm whoami
+          npm publish --provenance --access=public
+        if: inputs.version != 'doconly'
+        name: "npm publish"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,55 @@
+{
+  "name": "buildahcker",
+  "version": "0.0.1",
+  "description": "Buildahcker is a node.js library to create OCI (Open Container Initiative) container images (or docker images), based on Buildah and a hash-based cache.",
+  "keywords": [
+    "buildah",
+    "build",
+    "docker",
+    "image",
+    "OCI",
+    "Open Container Initiative",
+    "container",
+    "hash",
+    "cache"
+  ],
+  "bugs": {
+    "url": "https://github.com/davdiv/buildahcker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davdiv/buildahcker.git"
+  },
+  "author": "DivDE <divde@musicociel.fr>",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "ci": "npm run build && npm run test && npm run doc && npm run format:check",
+    "test": "npm run vitest run && tsc -p tsconfig.test.json",
+    "vitest": "buildah unshare vitest",
+    "doc": "typedoc",
+    "build": "vite build && tsc -p tsconfig.json",
+    "format:check": "prettier . --list-different",
+    "format:fix": "prettier . --write"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.25",
+    "prettier": "^3.2.5",
+    "typedoc": "^0.25.11",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.5",
+    "vitest": "^1.3.1"
+  }
+}
