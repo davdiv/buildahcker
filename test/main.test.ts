@@ -8,9 +8,11 @@ import {
   FileSystemCache,
   ImageBuilder,
   MemFile,
+  MemSymLink,
   WritableBuffer,
   addFiles,
   exec,
+  rmFiles,
   run,
 } from "../src";
 
@@ -81,3 +83,33 @@ it(
     }
   },
 );
+
+it("should throw when doing unsafe operations (rm)", async () => {
+  const builder = await ImageBuilder.from("scratch", {
+    logger,
+    cache: new FileSystemCache(tempFolder),
+  });
+  await expect(async () => {
+    await builder.executeStep([
+      addFiles({ mylink: new MemSymLink({ content: "/bin" }) }),
+      rmFiles(["mylink/echo"]),
+    ]);
+  }).rejects.toThrow("Unsafe path containing a symbolic link");
+});
+
+it("should work to remove a symbolic link", async () => {
+  async function createImage() {
+    const builder = await ImageBuilder.from("scratch", {
+      logger,
+      cache: new FileSystemCache(tempFolder),
+    });
+    await builder.executeStep([
+      addFiles({ mylink: new MemSymLink({ content: "/bin" }) }),
+      rmFiles(["mylink"]),
+    ]);
+    return builder.imageId;
+  }
+  const result = await createImage();
+  const result2 = await createImage();
+  expect(result).toBe(result2);
+});

@@ -23,6 +23,7 @@ export const safelyJoinSubpath = async (
   rootPath: string,
   subPath: string,
   allowNested: boolean,
+  skipLast: boolean,
 ) => {
   subPath = normalizeRelativePath(subPath);
   const parts = subPath.split(sep);
@@ -30,16 +31,20 @@ export const safelyJoinSubpath = async (
     throw new Error(`Invalid directory entry: ${subPath}`);
   }
   let res = rootPath;
+  let i = parts.length;
   for (const part of parts) {
+    i--;
     res = join(res, part);
-    try {
-      const statRes = await lstat(res);
-      if (statRes.isSymbolicLink()) {
-        throw new Error(`Unsafe path containing a symbolic link: ${res}`);
-      }
-    } catch (error: any) {
-      if (error.code !== "ENOENT") {
-        throw error;
+    if (i > 0 || !skipLast) {
+      try {
+        const statRes = await lstat(res);
+        if (statRes.isSymbolicLink()) {
+          throw new Error(`Unsafe path containing a symbolic link: ${res}`);
+        }
+      } catch (error: any) {
+        if (error.code !== "ENOENT") {
+          throw error;
+        }
       }
     }
   }

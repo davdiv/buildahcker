@@ -48,6 +48,7 @@ export const writeDirectoryContent = async (
       destinationPath,
       filePath,
       allowNested,
+      false,
     );
     await file.writeTo(fullPath);
   }
