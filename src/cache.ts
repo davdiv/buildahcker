@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
+import { homedir } from "os";
 import { dirname, join, resolve } from "path";
 
 export interface Cache {
@@ -51,3 +52,12 @@ export class FileSystemCache implements Cache {
     await writeFile(filePath, resultImageId, "utf8");
   }
 }
+
+let _defaultContainersCache: FileSystemCache | undefined;
+export const defaultContainersCache = () => {
+  if (!_defaultContainersCache) {
+    const cachePath = join(homedir(), ".buildahcker", "cache", "containers");
+    _defaultContainersCache = new FileSystemCache(cachePath);
+  }
+  return _defaultContainersCache;
+};
