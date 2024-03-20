@@ -24,7 +24,8 @@ export class ImageBuilder implements StepExecutor {
   }
 
   static async from(image: string, options?: ImageBuilderOptions) {
-    const imageId = await getFullImageID(image, options);
+    const imageId =
+      image === "scratch" ? image : await getFullImageID(image, options);
     if (!imageId) {
       throw new Error(`Could not get information about image ${image}`);
     }
