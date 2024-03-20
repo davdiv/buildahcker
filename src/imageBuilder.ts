@@ -70,7 +70,7 @@ export class ImageBuilder implements StepExecutor {
     }
     const imageId = this.#imageId;
     let newImageId: string | undefined;
-    let operationCacheKey = await step.getCacheKey?.();
+    const operationCacheKey = await step.getCacheKey?.();
     if (operationCacheKey) {
       newImageId = await cache.getEntry(imageId, operationCacheKey);
       if (newImageId) {

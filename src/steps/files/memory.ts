@@ -34,9 +34,7 @@ export class MemFile extends BaseRegularFile {
 
   protected override async _getContent(): Promise<Buffer> {
     const content = this.content;
-    return Buffer.isBuffer(this.content)
-      ? this.content
-      : Buffer.from(this.content, "utf8");
+    return Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8");
   }
 }
 
