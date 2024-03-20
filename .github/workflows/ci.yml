@@ -17,5 +17,6 @@ jobs:
         with:
           node-version: "20.x"
           cache: "npm"
+      - run: buildah --version
       - run: npm ci
       - run: npm run ci
