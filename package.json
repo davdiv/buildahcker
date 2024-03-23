@@ -30,6 +30,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
+    },
+    "./alpine": {
+      "import": "./dist/alpine.js",
+      "require": "./dist/alpine.cjs",
+      "types": "./dist/alpine/index.d.ts"
     }
   },
   "files": [
