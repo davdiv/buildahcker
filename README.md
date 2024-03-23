@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/buildahcker)](https://www.npmjs.com/package/buildahcker)
 
 Buildahcker is a node.js library to create OCI (Open Container Initiative) container images (or docker images), based on [Buildah](https://buildah.io/) and a hash-based cache.
-Have a look to the [API documentation here](https://davdiv.github.io/buildahcker/modules.html).
+Have a look to the [API documentation here](https://davdiv.github.io/buildahcker/).
 
 ## Installation
 
