@@ -52,12 +52,11 @@ export const exec = async (
   { logger }: ExecOptions = {},
   spawnOptions: Omit<SpawnOptionsWithoutStdio, "stdio"> = {},
 ) => {
-  logger?.write(`$ ${command.join(" ")}\n`);
   const proc = spawn(command[0], command.slice(1), {
     ...spawnOptions,
     stdio: "pipe",
   });
-  logger?.write(`[${proc.pid}] Start\n`);
+  logger?.write(`[${proc.pid}]$ ${command.join(" ")}\n`);
   if (logger) {
     proc.stdout.pipe(logger, { end: false });
     proc.stderr.pipe(logger, { end: false });
