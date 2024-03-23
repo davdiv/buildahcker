@@ -46,7 +46,11 @@ export class Container implements StepExecutor {
   }
 
   get mountPath() {
-    return this.#mountPath;
+    const res = this.#mountPath;
+    if (!res) {
+      throw new Error("The container is not mounted!");
+    }
+    return res;
   }
 
   async mount() {
