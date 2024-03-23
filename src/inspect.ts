@@ -16,6 +16,18 @@ export const getFullImageID = async (
   imageRef: string,
   options?: ExecOptions,
 ) => {
-  const result = await buildahInspect(imageRef, "image", options);
-  return result.FromImageID;
+  const result = await exec(
+    [
+      "buildah",
+      "inspect",
+      "--format",
+      "{{.FromImageID}}",
+      "--type",
+      "image",
+      "--",
+      imageRef,
+    ],
+    options,
+  );
+  return result.stdout.toString("utf8").trim();
 };
