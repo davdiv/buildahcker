@@ -32,8 +32,8 @@
       "types": "./dist/index.d.ts"
     },
     "./alpine": {
-      "import": "./dist/alpine.js",
-      "require": "./dist/alpine.cjs",
+      "import": "./dist/alpine/index.js",
+      "require": "./dist/alpine/index.cjs",
       "types": "./dist/alpine/index.d.ts"
     }
   },

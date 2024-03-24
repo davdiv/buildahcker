@@ -13,7 +13,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: "src/index.ts",
-        alpine: "src/alpine/index.ts",
+        "alpine/index": "src/alpine/index.ts",
       },
       formats: ["es", "cjs"],
     },
