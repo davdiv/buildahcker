@@ -1,36 +1,9 @@
-import { lstat, mkdir, mkdtemp, rm } from "fs/promises";
-import { tmpdir } from "os";
-import { join } from "path";
-import { beforeEach, expect, it } from "vitest";
-import {
-  FSContainerCache,
-  ImageBuilder,
-  WritableBuffer,
-  exec,
-  temporaryContainer,
-} from "../src";
+import { lstat } from "fs/promises";
+import { expect, it } from "vitest";
+import { ImageBuilder, exec, temporaryContainer } from "../src";
 import { apkAdd, apkRemoveApk } from "../src/alpine";
 import { safelyJoinSubpath } from "../src/steps/files/paths";
-
-let tempFolder: string;
-beforeEach(async () => {
-  const folder = await mkdtemp(join(tmpdir(), "buildahcker-test-"));
-  tempFolder = folder;
-
-  return async () => {
-    await rm(folder, { recursive: true });
-  };
-});
-
-let logger: WritableBuffer;
-beforeEach(() => {
-  const buffer = new WritableBuffer();
-  logger = buffer;
-  return async () => {
-    buffer.end();
-    console.log((await buffer.promise).toString("utf8"));
-  };
-});
+import { cacheOptions, logger } from "./testUtils";
 
 const statFileInImage = async (imageId: string, path: string) =>
   await temporaryContainer(
@@ -62,20 +35,15 @@ it(
   },
   async () => {
     const baseImage = "alpine:latest";
-    const containerCache = new FSContainerCache(
-      join(tempFolder, "containers-cache"),
-    );
-    const apkCache = join(tempFolder, "apk-cache");
-    await mkdir(apkCache, { recursive: true });
 
     async function createImage() {
       const builder = await ImageBuilder.from(baseImage, {
         logger,
-        containerCache,
+        ...cacheOptions,
       });
       await builder.executeStep(
         apkAdd(["linux-lts", "linux-firmware-none"], {
-          apkCache,
+          ...cacheOptions,
         }),
       );
       expect(

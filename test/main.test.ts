@@ -1,40 +1,18 @@
-import { lstat, mkdtemp, readFile, rm } from "fs/promises";
-import { tmpdir } from "os";
+import { lstat, readFile } from "fs/promises";
 import { join } from "path";
-import { beforeEach, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import {
   DiskLocation,
-  FSContainerCache,
   ImageBuilder,
   MemFile,
   MemSymLink,
-  WritableBuffer,
   addFiles,
   exec,
   rmFiles,
   run,
   temporaryContainer,
 } from "../src";
-
-let tempFolder: string;
-beforeEach(async () => {
-  const folder = await mkdtemp(join(tmpdir(), "buildahcker-test-"));
-  tempFolder = folder;
-
-  return async () => {
-    await rm(folder, { recursive: true });
-  };
-});
-
-let logger: WritableBuffer;
-beforeEach(() => {
-  const buffer = new WritableBuffer();
-  logger = buffer;
-  return async () => {
-    buffer.end();
-    console.log((await buffer.promise).toString("utf8"));
-  };
-});
+import { cacheOptions, logger } from "./testUtils";
 
 it(
   "should work for a simple container",
@@ -48,7 +26,7 @@ it(
     async function createImage() {
       const builder = await ImageBuilder.from(baseImage, {
         logger,
-        containerCache: new FSContainerCache(tempFolder),
+        ...cacheOptions,
       });
       await builder.executeStep([
         run(["apk", "add", "--no-cache", "nginx"]),
@@ -88,7 +66,7 @@ it(
 it("should throw when doing unsafe operations (rm)", async () => {
   const builder = await ImageBuilder.from("scratch", {
     logger,
-    containerCache: new FSContainerCache(tempFolder),
+    ...cacheOptions,
   });
   await expect(async () => {
     await builder.executeStep([
@@ -102,7 +80,7 @@ it("should work to remove a symbolic link", async () => {
   async function createImage() {
     const builder = await ImageBuilder.from("scratch", {
       logger,
-      containerCache: new FSContainerCache(tempFolder),
+      ...cacheOptions,
     });
     await builder.executeStep([
       addFiles({ mylink: new MemSymLink({ content: "/bin" }) }),
