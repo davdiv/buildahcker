@@ -35,6 +35,11 @@
       "import": "./dist/alpine/index.js",
       "require": "./dist/alpine/index.cjs",
       "types": "./dist/alpine/index.d.ts"
+    },
+    "./alpine/mksquashfs": {
+      "import": "./dist/alpine/mksquashfs/index.js",
+      "require": "./dist/alpine/mksquashfs/index.cjs",
+      "types": "./dist/alpine/mksquashfs/index.d.ts"
     }
   },
   "files": [

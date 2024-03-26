@@ -4,11 +4,13 @@ import { beforeEach } from "vitest";
 import { FSContainerCache, WritableBuffer } from "../src";
 import { CacheOptions } from "../src/alpine";
 
+export let tempFolder: string;
 export let cacheOptions: CacheOptions;
 beforeEach(async () => {
   const tempRootFolder = join(__dirname, "..", "temp");
   await mkdir(tempRootFolder, { recursive: true });
   const folder = await mkdtemp(join(tempRootFolder, "buildahcker-test-"));
+  tempFolder = folder;
   const apkCache = join(folder, "apk");
   await mkdir(apkCache);
   const containerCachePath = join(folder, "container");
