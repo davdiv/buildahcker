@@ -1,10 +1,10 @@
 import { ContainerCache } from "./containerCache";
 import {
   CommitOptions,
-  Container,
   ContainerOptions,
   Step,
   StepExecutor,
+  temporaryContainer,
 } from "./container";
 import { getFullImageID } from "./inspect";
 
@@ -41,20 +41,18 @@ export class ImageBuilder implements StepExecutor {
   }
 
   async #executeStepInOneContainer(step: Step, fromImageId?: string) {
-    const container = await Container.from(
+    return await temporaryContainer(
       fromImageId ?? this.#imageId,
+      async (container) => {
+        await container.executeStep(step);
+        const res = await container.commit(this.options?.commitOptions);
+        if (fromImageId) {
+          this.#imageId = res;
+        }
+        return res;
+      },
       this.options,
     );
-    try {
-      await container.executeStep(step);
-      const res = await container.commit(this.options?.commitOptions);
-      if (fromImageId) {
-        this.#imageId = res;
-      }
-      return res;
-    } finally {
-      await container.remove();
-    }
   }
 
   async executeStep(step: Step) {

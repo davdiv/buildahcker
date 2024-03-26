@@ -3,7 +3,6 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { beforeEach, expect, it } from "vitest";
 import {
-  Container,
   DiskLocation,
   FSContainerCache,
   ImageBuilder,
@@ -14,6 +13,7 @@ import {
   exec,
   rmFiles,
   run,
+  temporaryContainer,
 } from "../src";
 
 let tempFolder: string;
@@ -67,20 +67,21 @@ it(
     const result = await createImage();
     const result2 = await createImage();
     expect(result).toBe(result2);
-    const container = await Container.from(result);
-    try {
-      const mountPath = await container.mount();
-      const indexInMount = join(mountPath, "app", "index.ts");
-      expect(await readFile(indexInMount, "utf8")).toBe(
-        await readFile(join(srcDir, "index.ts"), "utf8"),
-      );
-      expect(await lstat(indexInMount)).toMatchObject({ uid: 1, gid: 2 });
-      expect(await readFile(join(mountPath, "etc", "issue"), "utf8")).toBe(
-        "Hello",
-      );
-    } finally {
-      await container.remove();
-    }
+    await temporaryContainer(
+      result,
+      async (container) => {
+        const mountPath = await container.mount();
+        const indexInMount = join(mountPath, "app", "index.ts");
+        expect(await readFile(indexInMount, "utf8")).toBe(
+          await readFile(join(srcDir, "index.ts"), "utf8"),
+        );
+        expect(await lstat(indexInMount)).toMatchObject({ uid: 1, gid: 2 });
+        expect(await readFile(join(mountPath, "etc", "issue"), "utf8")).toBe(
+          "Hello",
+        );
+      },
+      { logger },
+    );
   },
 );
 

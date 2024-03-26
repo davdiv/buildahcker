@@ -3,11 +3,11 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { beforeEach, expect, it } from "vitest";
 import {
-  Container,
   FSContainerCache,
   ImageBuilder,
   WritableBuffer,
   exec,
+  temporaryContainer,
 } from "../src";
 import { apkAdd, apkRemoveApk } from "../src/alpine";
 import { safelyJoinSubpath } from "../src/steps/files/paths";
@@ -32,28 +32,28 @@ beforeEach(() => {
   };
 });
 
-const statFileInImage = async (imageId: string, path: string) => {
-  const container = await Container.from(imageId, { logger });
-  try {
-    await container.mount();
-    const fullPath = await safelyJoinSubpath(
-      container.mountPath,
-      path,
-      true,
-      false,
-    );
-    try {
-      return await lstat(fullPath);
-    } catch (e: any) {
-      if (e.code === "ENOENT") {
-        return null;
+const statFileInImage = async (imageId: string, path: string) =>
+  await temporaryContainer(
+    imageId,
+    async (container) => {
+      await container.mount();
+      const fullPath = await safelyJoinSubpath(
+        container.mountPath,
+        path,
+        true,
+        false,
+      );
+      try {
+        return await lstat(fullPath);
+      } catch (e: any) {
+        if (e.code === "ENOENT") {
+          return null;
+        }
+        throw e;
       }
-      throw e;
-    }
-  } finally {
-    await container.remove();
-  }
-};
+    },
+    { logger },
+  );
 
 it(
   "should work to add then remove packages",

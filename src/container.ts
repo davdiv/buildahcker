@@ -110,3 +110,16 @@ export class Container implements StepExecutor {
     }
   }
 }
+
+export const temporaryContainer = async <T>(
+  image: string,
+  fn: (container: Container) => Promise<T>,
+  containerOptions?: ContainerOptions,
+) => {
+  const container = await Container.from(image, containerOptions);
+  try {
+    return await fn(container);
+  } finally {
+    await container.remove();
+  }
+};
