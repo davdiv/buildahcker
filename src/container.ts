@@ -123,3 +123,14 @@ export const temporaryContainer = async <T>(
     await container.remove();
   }
 };
+
+export const withImageOrContainer = async <T>(
+  source: Container | string,
+  fn: (container: Container) => Promise<T>,
+  containerOptions?: ContainerOptions,
+) => {
+  if (typeof source === "string") {
+    return await temporaryContainer(source, fn, containerOptions);
+  }
+  return await fn(source);
+};
