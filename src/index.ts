@@ -1,4 +1,4 @@
-export * from "./cache";
+export * from "./containerCache";
 export * from "./exec";
 export * from "./inspect";
 export * from "./container";

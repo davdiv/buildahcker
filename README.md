@@ -15,7 +15,7 @@ npm install buildahcker --save-dev
 
 ```typescript
 import {
-  defaultContainersCache,
+  defaultContainerCache,
   ImageBuilder,
   run,
   addFiles,
@@ -26,7 +26,7 @@ import {
 const createImage = async () => {
   const builder = await ImageBuilder.from("alpine:latest", {
     logger: process.stdout,
-    cache: defaultContainersCache(),
+    containerCache: defaultContainerCache(),
   });
   await builder.executeStep([
     run(["apk", "add", "--no-cache", "nginx"]),

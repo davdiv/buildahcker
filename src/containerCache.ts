@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "fs/promises";
 import { homedir } from "os";
 import { dirname, join, resolve } from "path";
 
-export interface Cache {
+export interface ContainerCache {
   getEntry(
     imageId: string,
     operationCacheKey: string,
@@ -16,7 +16,7 @@ export interface Cache {
 
 const safeRegExp = /^[\w-]+$/;
 
-export class FileSystemCache implements Cache {
+export class FSContainerCache implements ContainerCache {
   cachePath: string;
 
   constructor(cachePath: string) {
@@ -53,11 +53,11 @@ export class FileSystemCache implements Cache {
   }
 }
 
-let _defaultContainersCache: FileSystemCache | undefined;
-export const defaultContainersCache = () => {
+let _defaultContainersCache: FSContainerCache | undefined;
+export const defaultContainerCache = () => {
   if (!_defaultContainersCache) {
     const cachePath = join(homedir(), ".buildahcker", "cache", "containers");
-    _defaultContainersCache = new FileSystemCache(cachePath);
+    _defaultContainersCache = new FSContainerCache(cachePath);
   }
   return _defaultContainersCache;
 };

@@ -1,18 +1,19 @@
+import { mkdir } from "fs/promises";
 import { homedir } from "os";
 import { join } from "path";
+import { ContainerCache, defaultContainerCache } from "../containerCache";
 import { RunOptions, run } from "../steps/run";
-import { mkdir } from "fs/promises";
 
 export interface ApkAddOptions {
-  cache?: string;
+  apkCache?: string;
 }
 
 export const apkAdd = (packages: string[], options?: ApkAddOptions) => {
   const runOptions: RunOptions = {};
-  if (options?.cache) {
+  if (options?.apkCache) {
     runOptions.buildahArgsNoHash = [
       "--volume",
-      `${options.cache}:/etc/apk/cache:rw`,
+      `${options.apkCache}:/etc/apk/cache:rw`,
     ];
     runOptions.extraHashData = ["--volume", `:/etc/apk/cache:rw`];
   }
@@ -26,4 +27,20 @@ export const defaultApkCache = async () => {
     await mkdir(_defaultApkCache, { recursive: true });
   }
   return _defaultApkCache;
+};
+
+export interface CacheOptions {
+  containerCache?: ContainerCache;
+  apkCache?: string;
+}
+
+let _defaultCacheOptions: CacheOptions;
+export const defaultCacheOptions = async () => {
+  if (!_defaultCacheOptions) {
+    _defaultCacheOptions = {
+      containerCache: defaultContainerCache(),
+      apkCache: await defaultApkCache(),
+    };
+  }
+  return _defaultCacheOptions;
 };

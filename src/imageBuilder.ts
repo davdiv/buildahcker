@@ -1,4 +1,4 @@
-import { Cache } from "./cache";
+import { ContainerCache } from "./containerCache";
 import {
   CommitOptions,
   Container,
@@ -9,7 +9,7 @@ import {
 import { getFullImageID } from "./inspect";
 
 export interface ImageBuilderOptions extends ContainerOptions {
-  cache?: Cache;
+  containerCache?: ContainerCache;
   commitOptions?: CommitOptions;
 }
 
@@ -58,8 +58,8 @@ export class ImageBuilder implements StepExecutor {
   }
 
   async executeStep(step: Step) {
-    const cache = this.options?.cache;
-    if (!cache) {
+    const containerCache = this.options?.containerCache;
+    if (!containerCache) {
       await this.#executeStepInOneContainer(step);
       return;
     }
@@ -73,7 +73,7 @@ export class ImageBuilder implements StepExecutor {
     let newImageId: string | undefined;
     const operationCacheKey = await step.getCacheKey?.();
     if (operationCacheKey) {
-      newImageId = await cache.getEntry(imageId, operationCacheKey);
+      newImageId = await containerCache.getEntry(imageId, operationCacheKey);
       if (newImageId) {
         try {
           newImageId = await getFullImageID(newImageId, this.options);
@@ -85,7 +85,7 @@ export class ImageBuilder implements StepExecutor {
     if (!newImageId) {
       newImageId = await this.#executeStepInOneContainer(step, imageId);
       if (operationCacheKey) {
-        await cache.setEntry(imageId, operationCacheKey, newImageId);
+        await containerCache.setEntry(imageId, operationCacheKey, newImageId);
       }
     }
     this.#imageId = newImageId;

@@ -5,7 +5,7 @@ import { beforeEach, expect, it } from "vitest";
 import {
   Container,
   DiskLocation,
-  FileSystemCache,
+  FSContainerCache,
   ImageBuilder,
   MemFile,
   MemSymLink,
@@ -48,7 +48,7 @@ it(
     async function createImage() {
       const builder = await ImageBuilder.from(baseImage, {
         logger,
-        cache: new FileSystemCache(tempFolder),
+        containerCache: new FSContainerCache(tempFolder),
       });
       await builder.executeStep([
         run(["apk", "add", "--no-cache", "nginx"]),
@@ -87,7 +87,7 @@ it(
 it("should throw when doing unsafe operations (rm)", async () => {
   const builder = await ImageBuilder.from("scratch", {
     logger,
-    cache: new FileSystemCache(tempFolder),
+    containerCache: new FSContainerCache(tempFolder),
   });
   await expect(async () => {
     await builder.executeStep([
@@ -101,7 +101,7 @@ it("should work to remove a symbolic link", async () => {
   async function createImage() {
     const builder = await ImageBuilder.from("scratch", {
       logger,
-      cache: new FileSystemCache(tempFolder),
+      containerCache: new FSContainerCache(tempFolder),
     });
     await builder.executeStep([
       addFiles({ mylink: new MemSymLink({ content: "/bin" }) }),

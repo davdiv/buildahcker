@@ -4,7 +4,7 @@ import { join } from "path";
 import { beforeEach, expect, it } from "vitest";
 import {
   Container,
-  FileSystemCache,
+  FSContainerCache,
   ImageBuilder,
   WritableBuffer,
   exec,
@@ -62,18 +62,20 @@ it(
   },
   async () => {
     const baseImage = "alpine:latest";
-    const cache = new FileSystemCache(join(tempFolder, "containers-cache"));
+    const containerCache = new FSContainerCache(
+      join(tempFolder, "containers-cache"),
+    );
     const apkCache = join(tempFolder, "apk-cache");
     await mkdir(apkCache, { recursive: true });
 
     async function createImage() {
       const builder = await ImageBuilder.from(baseImage, {
         logger,
-        cache,
+        containerCache,
       });
       await builder.executeStep(
         apkAdd(["linux-lts", "linux-firmware-none"], {
-          cache: apkCache,
+          apkCache,
         }),
       );
       expect(
