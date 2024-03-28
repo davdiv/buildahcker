@@ -1,4 +1,4 @@
-import { stat } from "fs/promises";
+import { readFile } from "fs/promises";
 import { join } from "path";
 import { expect, it } from "vitest";
 import { exec } from "../src";
@@ -20,8 +20,13 @@ it(
       outputFile,
       partitions: [
         {
-          name: "mypart",
-          size: 1000000,
+          name: "p1",
+          size: 10000,
+          type: PartitionType.LinuxData,
+        },
+        {
+          name: "p2",
+          size: 10000,
           type: PartitionType.LinuxData,
         },
       ],
@@ -31,14 +36,23 @@ it(
     await writePartitions({
       outputFile,
       partitions: [
-        {
-          inputFile: __filename,
-          output: partitions[0],
-        },
+        { inputFile: __filename, output: partitions[0] },
+        { inputBuffer: Buffer.from("Hello!!", "utf8"), output: partitions[1] },
       ],
     });
-    const outputImg = await stat(outputFile);
-    expect(outputImg.isFile()).toBeTruthy();
-    expect(outputImg.size).toBeGreaterThan(1000000);
+    const thisFile = await readFile(__filename);
+    const outputImg = await readFile(outputFile);
+    expect(outputImg.subarray(512, 512 + 8).toString("ascii")).toBe("EFI PART");
+    expect(
+      outputImg.subarray(
+        partitions[0].offset,
+        partitions[0].offset + thisFile.length,
+      ),
+    ).toEqual(thisFile);
+    expect(
+      outputImg
+        .subarray(partitions[1].offset, partitions[1].offset + 7)
+        .toString("utf8"),
+    ).toBe("Hello!!");
   },
 );
