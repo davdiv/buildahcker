@@ -2,7 +2,7 @@ import { truncate } from "fs/promises";
 import type { Writable } from "stream";
 import type { CacheOptions } from "../apkAdd";
 import { prepareApkPackagesAndRun } from "../prepareApkPackages";
-import { prepareOutputFile } from "../prepareOutputFile";
+import { prepareOutputFile } from "../fileUtils";
 import type { OffsetAndSize } from "./writePartitions";
 
 export enum PartitionType {

@@ -1,5 +1,6 @@
-import { close, createReadStream, createWriteStream, open } from "fs";
+import { createReadStream, createWriteStream } from "fs";
 import { pipeline } from "stream/promises";
+import { closeFile, openFile } from "../fileUtils";
 
 export interface OffsetAndSize {
   offset: number;
@@ -22,20 +23,17 @@ export type PartitionConfig =
   | PartitionConfigFromFile;
 
 export interface WritePartitionsOptions {
-  outputFile: string;
+  outputFile: string | number;
   partitions: PartitionConfig[];
 }
 
 export const writePartitions = async (config: WritePartitionsOptions) => {
-  const outputFile = await new Promise<number>((resolve, reject) =>
-    open(config.outputFile, "r+", (error, fd) =>
-      error ? reject(error) : resolve(fd),
-    ),
-  );
+  const pathOrFd = config.outputFile;
+  const fd = await openFile(pathOrFd, "r+");
   try {
     for (const partition of config.partitions) {
       const outputStream = createWriteStream("", {
-        fd: outputFile,
+        fd,
         start: partition.output.offset,
         autoClose: false,
       });
@@ -66,6 +64,6 @@ export const writePartitions = async (config: WritePartitionsOptions) => {
       }
     }
   } finally {
-    await new Promise((resolve) => close(outputFile, resolve));
+    await closeFile(fd, pathOrFd);
   }
 };

@@ -4,7 +4,7 @@ import type { Container } from "../../container";
 import { withImageOrContainer } from "../../container";
 import { safelyJoinSubpath } from "../../steps/files/paths";
 import type { CacheOptions } from "../apkAdd";
-import { prepareOutputFile } from "../prepareOutputFile";
+import { prepareOutputFile } from "../fileUtils";
 
 export interface MksquashfsOptions {
   source: string | Container;
