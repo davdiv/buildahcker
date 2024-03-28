@@ -1,7 +1,7 @@
 import { truncate } from "fs/promises";
 import type { Writable } from "stream";
 import type { CacheOptions } from "../apkAdd";
-import { installAndRun } from "../installAndRun";
+import { prepareApkPackagesAndRun } from "../prepareApkPackages";
 import { prepareOutputFile } from "../prepareOutputFile";
 import type { OffsetAndSize } from "./writePartitions";
 
@@ -48,7 +48,7 @@ export const parted = async (config: PartedOptions) => {
 
   const outputFile = await prepareOutputFile(config.outputFile);
   await truncate(outputFile, size * sectorSize);
-  await installAndRun({
+  await prepareApkPackagesAndRun({
     apkPackages: ["parted"],
     command: ["parted", ...cmdLine],
     buildahRunOptions: ["-v", `${outputFile}:/out:rw`],

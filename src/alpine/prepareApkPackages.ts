@@ -5,25 +5,27 @@ import { ImageBuilder } from "../imageBuilder";
 import type { CacheOptions } from "./apkAdd";
 import { apkAdd } from "./apkAdd";
 
-export interface InstallAndRunOptions {
+export interface PrepareApkPackagesOptions {
   baseImage?: string;
   apkPackages: string[];
-  command: string[];
-  buildahRunOptions: string[];
   cacheOptions?: CacheOptions;
   commitOptions?: CommitOptions;
   logger?: Writable;
 }
 
-export const installAndRun = async ({
+export interface PrepareApkPackagesAndRunOptions
+  extends PrepareApkPackagesOptions {
+  command: string[];
+  buildahRunOptions: string[];
+}
+
+export const prepareApkPackages = async ({
   baseImage = "alpine",
   apkPackages,
-  command,
-  buildahRunOptions,
   cacheOptions,
   commitOptions,
   logger,
-}: InstallAndRunOptions) => {
+}: PrepareApkPackagesOptions) => {
   const imageBuilder = await ImageBuilder.from(baseImage, {
     containerCache: cacheOptions?.containerCache,
     commitOptions,
@@ -32,9 +34,16 @@ export const installAndRun = async ({
   await imageBuilder.executeStep(
     apkAdd(apkPackages, { apkCache: cacheOptions?.apkCache }),
   );
-  return await temporaryContainer(
-    imageBuilder.imageId,
-    async (container) => await container.run(command, buildahRunOptions),
-    { logger },
-  );
+  return imageBuilder.imageId;
 };
+
+export const prepareApkPackagesAndRun = async ({
+  command,
+  buildahRunOptions,
+  ...installOptions
+}: PrepareApkPackagesAndRunOptions) =>
+  await temporaryContainer(
+    await prepareApkPackages(installOptions),
+    async (container) => await container.run(command, buildahRunOptions),
+    { logger: installOptions.logger },
+  );

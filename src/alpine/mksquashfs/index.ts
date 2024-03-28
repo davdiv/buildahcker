@@ -1,5 +1,5 @@
 import type { Writable } from "stream";
-import { installAndRun } from "..";
+import { prepareApkPackagesAndRun } from "..";
 import type { Container } from "../../container";
 import { withImageOrContainer } from "../../container";
 import { safelyJoinSubpath } from "../../steps/files/paths";
@@ -35,7 +35,7 @@ export const mksquashfs = async ({
               false,
             )
           : container.mountPath;
-      await installAndRun({
+      await prepareApkPackagesAndRun({
         apkPackages: ["squashfs-tools"],
         command: ["mksquashfs", "/in", "/out", "-noappend", "-no-xattrs"],
         buildahRunOptions: [
