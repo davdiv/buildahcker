@@ -1,8 +1,8 @@
-import { mkdir, truncate, writeFile } from "fs/promises";
-import { dirname, resolve } from "path";
+import { truncate } from "fs/promises";
 import type { Writable } from "stream";
 import type { CacheOptions } from "../apkAdd";
 import { installAndRun } from "../installAndRun";
+import { prepareOutputFile } from "../prepareOutputFile";
 import type { OffsetAndSize } from "./writePartitions";
 
 export enum PartitionType {
@@ -46,14 +46,12 @@ export const parted = async (config: PartedOptions) => {
   cmdLine.push("print");
   size += gptTableSize;
 
-  const outputImage = resolve(config.outputFile);
-  await mkdir(dirname(outputImage), { recursive: true });
-  await writeFile(outputImage, "");
-  await truncate(outputImage, size * sectorSize);
+  const outputFile = await prepareOutputFile(config.outputFile);
+  await truncate(outputFile, size * sectorSize);
   await installAndRun({
     apkPackages: ["parted"],
     command: ["parted", ...cmdLine],
-    buildahRunOptions: ["-v", `${outputImage}:/out:rw`],
+    buildahRunOptions: ["-v", `${outputFile}:/out:rw`],
     cacheOptions: config.cacheOptions,
     logger: config.logger,
   });

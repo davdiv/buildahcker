@@ -1,11 +1,10 @@
-import { mkdir, writeFile } from "fs/promises";
-import { dirname, resolve } from "path";
 import type { Writable } from "stream";
 import { installAndRun } from "..";
 import type { Container } from "../../container";
 import { withImageOrContainer } from "../../container";
 import { safelyJoinSubpath } from "../../steps/files/paths";
 import type { CacheOptions } from "../apkAdd";
+import { prepareOutputFile } from "../prepareOutputFile";
 
 export interface MksquashfsOptions {
   source: string | Container;
@@ -22,9 +21,7 @@ export const mksquashfs = async ({
   cacheOptions,
   logger,
 }: MksquashfsOptions) => {
-  outputFile = resolve(outputFile);
-  await mkdir(dirname(outputFile), { recursive: true });
-  await writeFile(outputFile, "");
+  outputFile = await prepareOutputFile(outputFile);
   await withImageOrContainer(
     source,
     async (container) => {
