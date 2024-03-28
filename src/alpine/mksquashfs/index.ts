@@ -1,10 +1,11 @@
 import { mkdir, writeFile } from "fs/promises";
 import { dirname, resolve } from "path";
-import { Writable } from "stream";
+import type { Writable } from "stream";
 import { installAndRun } from "..";
-import { Container, withImageOrContainer } from "../../container";
+import type { Container } from "../../container";
+import { withImageOrContainer } from "../../container";
 import { safelyJoinSubpath } from "../../steps/files/paths";
-import { CacheOptions } from "../apkAdd";
+import type { CacheOptions } from "../apkAdd";
 
 export interface MksquashfsOptions {
   source: string | Container;

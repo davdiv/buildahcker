@@ -1,4 +1,5 @@
-import { SpawnOptionsWithoutStdio, spawn } from "child_process";
+import type { SpawnOptionsWithoutStdio } from "child_process";
+import { spawn } from "child_process";
 import { Writable } from "stream";
 
 export class WritableBuffer extends Writable {

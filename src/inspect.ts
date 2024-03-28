@@ -1,4 +1,5 @@
-import { ExecOptions, exec } from "./exec";
+import type { ExecOptions } from "./exec";
+import { exec } from "./exec";
 
 export const buildahInspect = async (
   object: string,

@@ -1,11 +1,9 @@
-import {
-  BaseDirectory,
-  BaseRegularFile,
-  BaseSymbolicLink,
+import type {
   DirectoryContent,
   FileAttributes,
   SymbolicLinkAttributes,
 } from "./base";
+import { BaseDirectory, BaseRegularFile, BaseSymbolicLink } from "./base";
 
 export class MemDirectory extends BaseDirectory {
   public content: DirectoryContent;

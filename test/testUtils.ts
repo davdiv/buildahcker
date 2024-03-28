@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm } from "fs/promises";
 import { join } from "path";
 import { beforeEach } from "vitest";
 import { FSContainerCache, WritableBuffer } from "../src";
-import { CacheOptions } from "../src/alpine";
+import type { CacheOptions } from "../src/alpine";
 
 export let tempFolder: string;
 export let cacheOptions: CacheOptions;

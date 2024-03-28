@@ -10,6 +10,7 @@ export default tseslint.config(
   {
     rules: {
       "no-empty": "off",
+      "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-explicit-any": "off",
     },
   },

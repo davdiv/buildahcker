@@ -1,7 +1,9 @@
-import { Writable } from "stream";
-import { CommitOptions, temporaryContainer } from "../container";
+import type { Writable } from "stream";
+import type { CommitOptions } from "../container";
+import { temporaryContainer } from "../container";
 import { ImageBuilder } from "../imageBuilder";
-import { CacheOptions, apkAdd } from "./apkAdd";
+import type { CacheOptions } from "./apkAdd";
+import { apkAdd } from "./apkAdd";
 
 export interface InstallAndRunOptions {
   baseImage?: string;

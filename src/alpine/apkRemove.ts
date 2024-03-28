@@ -1,7 +1,8 @@
 import { createHash } from "crypto";
 import { readdir, rm, rmdir } from "fs/promises";
-import { Writable } from "stream";
-import { AtomicStep, rmFiles } from "..";
+import type { Writable } from "stream";
+import type { AtomicStep } from "..";
+import { rmFiles } from "..";
 import { safelyJoinSubpath } from "../steps/files/paths";
 import { readApkInstalledDatabase } from "./apkInstalledDatabase";
 

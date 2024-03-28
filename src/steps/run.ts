@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { AtomicStep } from "../container";
+import type { AtomicStep } from "../container";
 
 export interface RunOptions {
   buildahArgs?: string[];

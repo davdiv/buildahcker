@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
-import { AtomicStep } from "../../container";
+import type { AtomicStep } from "../../container";
+import type { DirectoryContent } from "./base";
 import {
-  DirectoryContent,
   hashDirectoryContent,
   normalizeDirectoryEntries,
   writeDirectoryContent,

@@ -1,8 +1,10 @@
 import { mkdir } from "fs/promises";
 import { homedir } from "os";
 import { join } from "path";
-import { ContainerCache, defaultContainerCache } from "../containerCache";
-import { RunOptions, run } from "../steps/run";
+import type { ContainerCache } from "../containerCache";
+import { defaultContainerCache } from "../containerCache";
+import type { RunOptions } from "../steps/run";
+import { run } from "../steps/run";
 
 export interface ApkAddOptions {
   apkCache?: string;

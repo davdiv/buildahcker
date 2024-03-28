@@ -1,14 +1,16 @@
 import { lstat, readFile, readdir, readlink } from "fs/promises";
 import { join } from "path";
-import {
-  BaseDirectory,
+import type {
   BaseFile,
-  BaseRegularFile,
-  BaseSymbolicLink,
   DirectoryContent,
   FileAttributes,
-  ProxyFile,
   SymbolicLinkAttributes,
+} from "./base";
+import {
+  BaseDirectory,
+  BaseRegularFile,
+  BaseSymbolicLink,
+  ProxyFile,
 } from "./base";
 
 export interface DiskLocationOptions {
