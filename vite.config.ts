@@ -14,6 +14,7 @@ export default defineConfig({
       entry: {
         index: "src/index.ts",
         "alpine/index": "src/alpine/index.ts",
+        "alpine/partitions/index": "src/alpine/partitions/index.ts",
         "alpine/mksquashfs/index": "src/alpine/mksquashfs/index.ts",
       },
       formats: ["es", "cjs"],
