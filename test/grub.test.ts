@@ -1,0 +1,86 @@
+import { stat } from "fs/promises";
+import { join } from "path";
+import { expect, it } from "vitest";
+import { ImageBuilder, exec } from "../src";
+import { apkAdd, prepareApkPackagesAndRun } from "../src/alpine";
+import { grubBiosInstall } from "../src/alpine/grub";
+import { mksquashfs } from "../src/alpine/mksquashfs";
+import {
+  PartitionType,
+  parted,
+  writePartitions,
+} from "../src/alpine/partitions";
+import { cacheOptions, logger, tempFolder } from "./testUtils";
+
+it("grub installation should succeed", { timeout: 60000 }, async () => {
+  const source = "alpine";
+  await exec(["buildah", "pull", source], { logger });
+  const builder = await ImageBuilder.from(source, {
+    logger,
+    commitOptions: {
+      timestamp: 0,
+    },
+    ...cacheOptions,
+  });
+  await builder.executeStep([
+    apkAdd(["grub", "grub-bios"], {
+      ...cacheOptions,
+    }),
+  ]);
+  const squashfsImage = join(tempFolder, "squashfs.img");
+  await mksquashfs({
+    source: builder.imageId,
+    outputFile: squashfsImage,
+    cacheOptions,
+    logger,
+  });
+  const diskImage = join(tempFolder, "disk.img");
+  const partitions = await parted({
+    outputFile: diskImage,
+    partitions: [
+      {
+        name: "grub",
+        size: 100000,
+        type: PartitionType.BiosBoot,
+      },
+      {
+        name: "linux",
+        size: (await stat(squashfsImage)).size,
+        type: PartitionType.LinuxData,
+      },
+    ],
+    cacheOptions,
+    logger,
+  });
+  await grubBiosInstall({
+    imageFile: diskImage,
+    partition: partitions[0],
+    modules: ["biosdisk", "part_gpt", "squash4"],
+    prefix: "(hd0,2)/usr/lib/grub",
+    config: `insmod echo\necho -e "BUILDAHCKER-SUCCESS\\n\\n"\ninsmod sleep\ninsmod halt\nsleep 3\nhalt\n`,
+    cacheOptions,
+    logger,
+  });
+  await writePartitions({
+    outputFile: diskImage,
+    partitions: [
+      {
+        inputFile: squashfsImage,
+        output: partitions[1],
+      },
+    ],
+  });
+  const result = await prepareApkPackagesAndRun({
+    apkPackages: ["qemu-system-x86_64"],
+    command: [
+      "qemu-system-x86_64",
+      "--drive",
+      "format=raw,file=/disk.img",
+      "-nographic",
+    ],
+    buildahRunOptions: ["-v", `${diskImage}:/disk.img`],
+    cacheOptions,
+    logger,
+  });
+  expect(result.stdout.toString("utf8")).toContain("BUILDAHCKER-SUCCESS");
+});

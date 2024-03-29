@@ -3,6 +3,7 @@
     "src/index.ts",
     "src/alpine/index.ts",
     "src/alpine/partitions/index.ts",
+    "src/alpine/grub/index.ts",
     "src/alpine/mksquashfs/index.ts"
   ],
   "excludeInternal": true,
