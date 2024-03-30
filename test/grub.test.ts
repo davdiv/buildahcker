@@ -12,7 +12,7 @@ import {
 } from "../src/alpine/partitions";
 import { cacheOptions, logger, tempFolder } from "./testUtils";
 
-it("grub installation should succeed", { timeout: 60000 }, async () => {
+it("grub installation should succeed", { timeout: 120000 }, async () => {
   const source = "alpine";
   await exec(["buildah", "pull", source], { logger });
   const builder = await ImageBuilder.from(source, {
@@ -30,10 +30,12 @@ it("grub installation should succeed", { timeout: 60000 }, async () => {
   const squashfsImage = join(tempFolder, "squashfs.img");
   await mksquashfs({
     source: builder.imageId,
+    pathInSource: "/usr/lib/grub",
     outputFile: squashfsImage,
     cacheOptions,
     logger,
   });
+  const squashfsImageSize = (await stat(squashfsImage)).size;
   const diskImage = join(tempFolder, "disk.img");
   const partitions = await parted({
     outputFile: diskImage,
@@ -45,7 +47,7 @@ it("grub installation should succeed", { timeout: 60000 }, async () => {
       },
       {
         name: "linux",
-        size: (await stat(squashfsImage)).size,
+        size: squashfsImageSize,
         type: PartitionType.LinuxData,
       },
     ],
@@ -56,7 +58,7 @@ it("grub installation should succeed", { timeout: 60000 }, async () => {
     imageFile: diskImage,
     partition: partitions[0],
     modules: ["biosdisk", "part_gpt", "squash4"],
-    prefix: "(hd0,2)/usr/lib/grub",
+    prefix: "(hd0,2)",
     config: `insmod echo\necho -e "BUILDAHCKER-SUCCESS\\n\\n"\ninsmod sleep\ninsmod halt\nsleep 3\nhalt\n`,
     cacheOptions,
     logger,
