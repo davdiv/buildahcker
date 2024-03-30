@@ -1,7 +1,7 @@
 {
   "name": "buildahcker",
   "version": "0.3.0",
-  "description": "Buildahcker is a node.js library to create OCI (Open Container Initiative) container images (or docker images), based on Buildah and a hash-based cache.",
+  "description": "Buildahcker is a node.js library to create and run commands in OCI (Open Container Initiative) container images (or docker images), based on Buildah and a hash-based cache. It also contains utilities to easily create a partitioned bootable disk image of a Linux system.",
   "keywords": [
     "buildah",
     "build",
@@ -11,7 +11,18 @@
     "Open Container Initiative",
     "container",
     "hash",
-    "cache"
+    "cache",
+    "squashfs",
+    "mksquashfs",
+    "parted",
+    "partition",
+    "gpt",
+    "grub",
+    "grub-install",
+    "grub-bios-setup",
+    "disk",
+    "boot",
+    "bootable"
   ],
   "bugs": {
     "url": "https://github.com/davdiv/buildahcker/issues"
