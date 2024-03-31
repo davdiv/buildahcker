@@ -1,7 +1,11 @@
 import { createHash } from "crypto";
-import type { AtomicStep } from "../container";
+import type { AtomicStep, Container } from "../container";
 
 export interface RunOptions {
+  beforeRun?: (
+    container: Container,
+    command: string[],
+  ) => void | string[] | Promise<void | string[]>;
   buildahArgs?: string[];
   buildahArgsNoHash?: string[];
   extraHashData?: string[];
@@ -9,7 +13,10 @@ export interface RunOptions {
 
 export const run = (command: string[], options?: RunOptions) => {
   const step: AtomicStep = async (container) => {
-    await container.run(command, [
+    let updatedCommand = [...command];
+    updatedCommand =
+      (await options?.beforeRun?.(container, updatedCommand)) ?? updatedCommand;
+    await container.run(updatedCommand, [
       ...(options?.buildahArgs ?? []),
       ...(options?.buildahArgsNoHash ?? []),
     ]);

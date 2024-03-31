@@ -10,23 +10,28 @@ export interface ApkAddOptions {
   apkCache?: string;
 }
 
-export const apkAdd = (packages: string[], options?: ApkAddOptions) => {
+export const apkAdd = (
+  packages: string[],
+  { apkCache }: ApkAddOptions = {},
+) => {
   const runOptions: RunOptions = {};
-  if (options?.apkCache) {
+  if (apkCache) {
     runOptions.buildahArgsNoHash = [
       "--volume",
-      `${options.apkCache}:/etc/apk/cache:rw`,
+      `${apkCache}:/etc/apk/cache:rw`,
     ];
     runOptions.extraHashData = ["--volume", `:/etc/apk/cache:rw`];
+    runOptions.beforeRun = async () => {
+      await mkdir(apkCache, { recursive: true });
+    };
   }
   return run(["apk", "add", ...packages], runOptions);
 };
 
 let _defaultApkCache: string | undefined;
-export const defaultApkCache = async () => {
+export const defaultApkCache = () => {
   if (!_defaultApkCache) {
     _defaultApkCache = join(homedir(), ".buildahcker", "cache", "apk");
-    await mkdir(_defaultApkCache, { recursive: true });
   }
   return _defaultApkCache;
 };
