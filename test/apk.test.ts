@@ -1,32 +1,7 @@
-import { lstat } from "fs/promises";
 import { expect, it } from "vitest";
-import { ImageBuilder, exec, temporaryContainer } from "../src";
+import { ImageBuilder, exec } from "../src";
 import { apkAdd, apkRemoveApk } from "../src/alpine";
-import { safelyJoinSubpath } from "../src/steps/files/paths";
-import { apkCache, containerCache, logger } from "./testUtils";
-
-const statFileInImage = async (imageId: string, path: string) =>
-  await temporaryContainer(
-    imageId,
-    async (container) => {
-      await container.mount();
-      const fullPath = await safelyJoinSubpath(
-        container.mountPath,
-        path,
-        true,
-        false,
-      );
-      try {
-        return await lstat(fullPath);
-      } catch (e: any) {
-        if (e.code === "ENOENT") {
-          return null;
-        }
-        throw e;
-      }
-    },
-    { logger },
-  );
+import { apkCache, containerCache, logger, statFileInImage } from "./testUtils";
 
 it(
   "should work to add then remove packages",

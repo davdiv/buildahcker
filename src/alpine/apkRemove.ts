@@ -2,7 +2,6 @@ import { createHash } from "crypto";
 import { readdir, rm, rmdir } from "fs/promises";
 import type { Writable } from "stream";
 import type { AtomicStep } from "../container";
-import { safelyJoinSubpath } from "../steps/files/paths";
 import { rmFiles } from "../steps/files/step";
 import { readApkInstalledDatabase } from "./apkInstalledDatabase";
 
@@ -36,18 +35,13 @@ export const apkManuallyRemove = (packages: string[], logger?: Writable) => {
       directoriesToRemove.push(...packageInfo.directories);
     }
     for (const file of filesToRemove) {
-      const fileFullPath = await safelyJoinSubpath(mountPath, file, true, true);
+      const fileFullPath = await container.resolveParent(file);
       logger?.write(`rm ${file}\n`);
       await rm(fileFullPath, { force: true });
     }
     directoriesToRemove.sort().reverse();
     for (const directory of directoriesToRemove) {
-      const fullPath = await safelyJoinSubpath(
-        mountPath,
-        directory,
-        true,
-        true,
-      );
+      const fullPath = await container.resolveParent(directory);
       await removeIfEmpty(fullPath);
     }
   };

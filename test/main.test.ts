@@ -4,6 +4,7 @@ import { expect, it } from "vitest";
 import {
   DiskLocation,
   ImageBuilder,
+  MemDirectory,
   MemFile,
   MemSymLink,
   addFiles,
@@ -12,7 +13,7 @@ import {
   run,
   temporaryContainer,
 } from "../src";
-import { containerCache, logger } from "./testUtils";
+import { containerCache, logger, statFileInImage } from "./testUtils";
 
 it(
   "should work for a simple container",
@@ -63,17 +64,20 @@ it(
   },
 );
 
-it("should throw when doing unsafe operations (rm)", async () => {
+it("should work to remove a file passing through a link", async () => {
   const builder = await ImageBuilder.from("scratch", {
     logger,
     containerCache,
   });
-  await expect(async () => {
-    await builder.executeStep([
-      addFiles({ mylink: new MemSymLink({ content: "/bin" }) }),
-      rmFiles(["mylink/echo"]),
-    ]);
-  }).rejects.toThrow("Unsafe path containing a symbolic link");
+  await builder.executeStep([
+    addFiles({
+      bin: new MemDirectory(),
+      "bin/echo": new MemFile({ content: "echo" }),
+      mylink: new MemSymLink({ content: "/bin" }),
+    }),
+    rmFiles(["mylink/echo"]),
+  ]);
+  expect(await statFileInImage(builder.imageId, "mylink/echo")).toBe(null);
 });
 
 it("should work to remove a symbolic link", async () => {

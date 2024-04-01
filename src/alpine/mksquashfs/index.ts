@@ -2,7 +2,6 @@ import type { Writable } from "stream";
 import type { Container } from "../../container";
 import { withImageOrContainer } from "../../container";
 import type { ContainerCache } from "../../containerCache";
-import { safelyJoinSubpath } from "../../steps/files/paths";
 import { prepareOutputFile } from "../fileUtils";
 import { prepareApkPackagesAndRun } from "../prepareApkPackages";
 
@@ -27,16 +26,7 @@ export const mksquashfs = async ({
   await withImageOrContainer(
     source,
     async (container) => {
-      await container.mount();
-      const sourcePath =
-        pathInSource !== "."
-          ? await safelyJoinSubpath(
-              container.mountPath,
-              pathInSource,
-              true,
-              false,
-            )
-          : container.mountPath;
+      const sourcePath = await container.resolve(pathInSource);
       await prepareApkPackagesAndRun({
         apkPackages: ["squashfs-tools"],
         command: ["mksquashfs", "/in", "/out", "-noappend", "-no-xattrs"],

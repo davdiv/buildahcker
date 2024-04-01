@@ -1,8 +1,8 @@
-import { mkdir, mkdtemp, rm } from "fs/promises";
+import { lstat, mkdir, mkdtemp, rm } from "fs/promises";
 import { join } from "path";
 import { beforeEach } from "vitest";
 import type { ContainerCache } from "../src";
-import { FSContainerCache, WritableBuffer } from "../src";
+import { FSContainerCache, WritableBuffer, temporaryContainer } from "../src";
 
 export let tempFolder: string;
 export let apkCache: string;
@@ -29,3 +29,20 @@ beforeEach(() => {
     console.log((await buffer.promise).toString("utf8"));
   };
 });
+
+export const statFileInImage = async (imageId: string, path: string) =>
+  await temporaryContainer(
+    imageId,
+    async (container) => {
+      const fullPath = await container.resolve(path);
+      try {
+        return await lstat(fullPath);
+      } catch (e: any) {
+        if (e.code === "ENOENT") {
+          return null;
+        }
+        throw e;
+      }
+    },
+    { logger },
+  );

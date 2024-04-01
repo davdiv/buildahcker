@@ -1,6 +1,6 @@
 import { open } from "fs/promises";
 import { posix } from "path";
-import { safelyJoinSubpath } from "../steps/files/paths";
+import { resolveInContainer } from "../resolveInContainer";
 
 export interface ApkInstalledPackageInfo {
   packageName?: string;
@@ -52,11 +52,9 @@ export class ApkInstalledDatabaseParser {
 }
 
 export const readApkInstalledDatabase = async (mountPath: string) => {
-  const installedDbPath = await safelyJoinSubpath(
+  const installedDbPath = await resolveInContainer(
     mountPath,
     "lib/apk/db/installed",
-    true,
-    false,
   );
   const file = await open(installedDbPath);
   try {

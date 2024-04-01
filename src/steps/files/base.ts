@@ -3,11 +3,31 @@ import {
   chmod,
   constants,
   lchown,
+  lstat,
   mkdir,
+  rm,
   symlink,
   writeFile,
 } from "fs/promises";
-import { normalizeEntry, safelyJoinSubpath } from "./paths";
+import { join, normalize, sep } from "path";
+
+export const normalizeRelativePath = (filePath) => {
+  const parts = normalize(filePath).split(sep);
+  if (parts[parts.length - 1] === "") {
+    parts.pop();
+  }
+  if (parts[0] === "." || parts[0] === "") {
+    parts.shift();
+  }
+  if (parts.length === 0 || parts[0] === "..") {
+    throw new Error(`Unsafe path: ${filePath}`);
+  }
+  return parts.join(sep);
+};
+export const normalizeEntry = <T>([filePath, file]: [string, T]): [
+  string,
+  T,
+] => [normalizeRelativePath(filePath), file];
 
 export interface CopyableFile {
   getHash(): Promise<Buffer>;
@@ -38,22 +58,6 @@ export const hashDirectoryContent = async (
   return hash.digest();
 };
 
-export const writeDirectoryContent = async (
-  destinationPath: string,
-  content: Map<string, CopyableFile>,
-  allowNested: boolean,
-) => {
-  for (const [filePath, file] of content) {
-    const fullPath = await safelyJoinSubpath(
-      destinationPath,
-      filePath,
-      allowNested,
-      false,
-    );
-    await file.writeTo(fullPath);
-  }
-};
-
 export interface FileAttributes {
   mode: number;
   uid: number;
@@ -81,6 +85,16 @@ export abstract class BaseFile implements CopyableFile {
   }
 
   async writeTo(destinationPath: string) {
+    try {
+      const statExisting = await lstat(destinationPath);
+      if (!statExisting.isDirectory()) {
+        await rm(destinationPath);
+      }
+    } catch (e: any) {
+      if (e.code !== "ENOENT") {
+        throw e;
+      }
+    }
     await this.writeContentTo(destinationPath);
     const attributes = await this.getAttributes();
     await lchown(destinationPath, attributes.uid, attributes.gid);
@@ -212,10 +226,8 @@ export abstract class BaseDirectory extends BaseFileWithCachedContent<
   }
   async writeContentTo(destinationPath: string) {
     await mkdir(destinationPath);
-    await writeDirectoryContent(
-      destinationPath,
-      await this.getContent(),
-      false,
-    );
+    for (const [filePath, file] of await this.getContent()) {
+      await file.writeTo(join(destinationPath, filePath));
+    }
   }
 }

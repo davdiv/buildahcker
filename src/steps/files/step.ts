@@ -1,19 +1,20 @@
 import { createHash } from "crypto";
 import { rm } from "fs/promises";
 import type { AtomicStep } from "../../container";
+import { resolveParentInContainer } from "../../resolveInContainer";
 import type { DirectoryContent } from "./base";
 import {
   hashDirectoryContent,
   normalizeDirectoryEntries,
-  writeDirectoryContent,
+  normalizeRelativePath,
 } from "./base";
-import { normalizeRelativePath, safelyJoinSubpath } from "./paths";
 
 export const addFiles = (files: DirectoryContent) => {
   const entries = normalizeDirectoryEntries(files);
   const step: AtomicStep = async (container) => {
-    const mountPath = await container.mount();
-    await writeDirectoryContent(mountPath, entries, true);
+    for (const [filePath, file] of entries) {
+      await file.writeTo(await container.resolve(filePath));
+    }
   };
   step.getCacheKey = async () => {
     const hash = (await hashDirectoryContent(entries)).toString("base64url");
@@ -27,11 +28,9 @@ export const rmFiles = (files: string[]) => {
   const step: AtomicStep = async (container) => {
     const mountPath = await container.mount();
     for (const relativeFilePath of files) {
-      const fullPath = await safelyJoinSubpath(
+      const fullPath = await resolveParentInContainer(
         mountPath,
         relativeFilePath,
-        true,
-        true,
       );
       await rm(fullPath, { force: true, recursive: true });
     }

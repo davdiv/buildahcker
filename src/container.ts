@@ -1,5 +1,9 @@
 import type { ExecOptions } from "./exec";
 import { exec } from "./exec";
+import {
+  resolveParentInContainer,
+  resolveInContainer,
+} from "./resolveInContainer";
 
 export interface AtomicStep {
   (container: Container): Promise<void>;
@@ -66,6 +70,20 @@ export class Container implements StepExecutor {
       this.#mountPath = res;
     }
     return res;
+  }
+
+  async resolve(subPath: string, strictDotDot?: boolean) {
+    await this.mount();
+    return await resolveInContainer(this.mountPath, subPath, strictDotDot);
+  }
+
+  async resolveParent(subPath: string, strictDotDot?: boolean) {
+    await this.mount();
+    return await resolveParentInContainer(
+      this.mountPath,
+      subPath,
+      strictDotDot,
+    );
   }
 
   async remove() {
