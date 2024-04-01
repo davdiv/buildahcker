@@ -1,23 +1,19 @@
 import { mkdir, mkdtemp, rm } from "fs/promises";
 import { join } from "path";
 import { beforeEach } from "vitest";
+import type { ContainerCache } from "../src";
 import { FSContainerCache, WritableBuffer } from "../src";
-import type { CacheOptions } from "../src/alpine";
 
 export let tempFolder: string;
-export let cacheOptions: CacheOptions;
+export let apkCache: string;
+export let containerCache: ContainerCache;
 beforeEach(async () => {
   const tempRootFolder = join(__dirname, "..", "temp");
   await mkdir(tempRootFolder, { recursive: true });
   const folder = await mkdtemp(join(tempRootFolder, "buildahcker-test-"));
   tempFolder = folder;
-  const apkCache = join(folder, "apk");
-  await mkdir(apkCache);
-  const containerCachePath = join(folder, "container");
-  cacheOptions = {
-    apkCache,
-    containerCache: new FSContainerCache(containerCachePath),
-  };
+  apkCache = join(folder, "apk");
+  containerCache = new FSContainerCache(join(folder, "container"));
 
   return async () => {
     await rm(folder, { recursive: true });

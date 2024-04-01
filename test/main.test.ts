@@ -12,7 +12,7 @@ import {
   run,
   temporaryContainer,
 } from "../src";
-import { cacheOptions, logger } from "./testUtils";
+import { containerCache, logger } from "./testUtils";
 
 it(
   "should work for a simple container",
@@ -26,7 +26,7 @@ it(
     async function createImage() {
       const builder = await ImageBuilder.from(baseImage, {
         logger,
-        ...cacheOptions,
+        containerCache,
       });
       await builder.executeStep([
         run(["apk", "add", "--no-cache", "nginx"]),
@@ -66,7 +66,7 @@ it(
 it("should throw when doing unsafe operations (rm)", async () => {
   const builder = await ImageBuilder.from("scratch", {
     logger,
-    ...cacheOptions,
+    containerCache,
   });
   await expect(async () => {
     await builder.executeStep([
@@ -80,7 +80,7 @@ it("should work to remove a symbolic link", async () => {
   async function createImage() {
     const builder = await ImageBuilder.from("scratch", {
       logger,
-      ...cacheOptions,
+      containerCache,
     });
     await builder.executeStep([
       addFiles({ mylink: new MemSymLink({ content: "/bin" }) }),

@@ -1,9 +1,9 @@
 import { createHash } from "crypto";
 import { readdir, rm, rmdir } from "fs/promises";
 import type { Writable } from "stream";
-import type { AtomicStep } from "..";
-import { rmFiles } from "..";
+import type { AtomicStep } from "../container";
 import { safelyJoinSubpath } from "../steps/files/paths";
+import { rmFiles } from "../steps/files/step";
 import { readApkInstalledDatabase } from "./apkInstalledDatabase";
 
 const removeIfEmpty = async (directory: string) => {

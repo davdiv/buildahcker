@@ -1,16 +1,17 @@
 import type { Writable } from "stream";
 import type { CommitOptions } from "../container";
 import { temporaryContainer } from "../container";
+import type { ContainerCache } from "../containerCache";
 import { ImageBuilder } from "../imageBuilder";
-import type { CacheOptions } from "./apkAdd";
 import { apkAdd } from "./apkAdd";
 
 export interface PrepareApkPackagesOptions {
   baseImage?: string;
   apkPackages: string[];
-  cacheOptions?: CacheOptions;
   commitOptions?: CommitOptions;
   logger?: Writable;
+  apkCache?: string;
+  containerCache?: ContainerCache;
 }
 
 export interface PrepareApkPackagesAndRunOptions
@@ -22,18 +23,17 @@ export interface PrepareApkPackagesAndRunOptions
 export const prepareApkPackages = async ({
   baseImage = "alpine",
   apkPackages,
-  cacheOptions,
   commitOptions,
   logger,
+  apkCache,
+  containerCache,
 }: PrepareApkPackagesOptions) => {
   const imageBuilder = await ImageBuilder.from(baseImage, {
-    containerCache: cacheOptions?.containerCache,
+    containerCache,
     commitOptions,
     logger,
   });
-  await imageBuilder.executeStep(
-    apkAdd(apkPackages, { apkCache: cacheOptions?.apkCache }),
-  );
+  await imageBuilder.executeStep(apkAdd(apkPackages, { apkCache }));
   return imageBuilder.imageId;
 };
 

@@ -1,8 +1,8 @@
 import { truncate } from "fs/promises";
 import type { Writable } from "stream";
-import type { CacheOptions } from "../apkAdd";
-import { prepareApkPackagesAndRun } from "../prepareApkPackages";
+import type { ContainerCache } from "../../containerCache";
 import { prepareOutputFile } from "../fileUtils";
+import { prepareApkPackagesAndRun } from "../prepareApkPackages";
 import type { OffsetAndSize } from "./writePartitions";
 
 export enum PartitionType {
@@ -20,7 +20,8 @@ export interface Partition {
 export interface PartedOptions {
   outputFile: string;
   partitions: Partition[];
-  cacheOptions?: CacheOptions;
+  containerCache?: ContainerCache;
+  apkCache?: string;
   logger?: Writable;
 }
 
@@ -52,7 +53,8 @@ export const parted = async (config: PartedOptions) => {
     apkPackages: ["parted"],
     command: ["parted", ...cmdLine],
     buildahRunOptions: ["-v", `${outputFile}:/out:rw`],
-    cacheOptions: config.cacheOptions,
+    containerCache: config.containerCache,
+    apkCache: config.apkCache,
     logger: config.logger,
   });
   return offsets;

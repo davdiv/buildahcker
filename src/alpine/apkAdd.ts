@@ -1,8 +1,6 @@
 import { mkdir } from "fs/promises";
 import { homedir } from "os";
 import { join } from "path";
-import type { ContainerCache } from "../containerCache";
-import { defaultContainerCache } from "../containerCache";
 import type { RunOptions } from "../steps/run";
 import { run } from "../steps/run";
 
@@ -34,20 +32,4 @@ export const defaultApkCache = () => {
     _defaultApkCache = join(homedir(), ".buildahcker", "cache", "apk");
   }
   return _defaultApkCache;
-};
-
-export interface CacheOptions {
-  containerCache?: ContainerCache;
-  apkCache?: string;
-}
-
-let _defaultCacheOptions: CacheOptions;
-export const defaultCacheOptions = async () => {
-  if (!_defaultCacheOptions) {
-    _defaultCacheOptions = {
-      containerCache: defaultContainerCache(),
-      apkCache: await defaultApkCache(),
-    };
-  }
-  return _defaultCacheOptions;
 };

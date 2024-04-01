@@ -1,4 +1,3 @@
-import type { ContainerCache } from "./containerCache";
 import type {
   CommitOptions,
   ContainerOptions,
@@ -6,6 +5,7 @@ import type {
   StepExecutor,
 } from "./container";
 import { temporaryContainer } from "./container";
+import type { ContainerCache } from "./containerCache";
 import { getFullImageID } from "./inspect";
 
 export interface ImageBuilderOptions extends ContainerOptions {

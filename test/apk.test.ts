@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 import { ImageBuilder, exec, temporaryContainer } from "../src";
 import { apkAdd, apkRemoveApk } from "../src/alpine";
 import { safelyJoinSubpath } from "../src/steps/files/paths";
-import { cacheOptions, logger } from "./testUtils";
+import { apkCache, containerCache, logger } from "./testUtils";
 
 const statFileInImage = async (imageId: string, path: string) =>
   await temporaryContainer(
@@ -39,11 +39,11 @@ it(
     async function createImage() {
       const builder = await ImageBuilder.from(baseImage, {
         logger,
-        ...cacheOptions,
+        containerCache,
       });
       await builder.executeStep(
         apkAdd(["linux-lts", "linux-firmware-none"], {
-          ...cacheOptions,
+          apkCache,
         }),
       );
       expect(

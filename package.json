@@ -67,12 +67,15 @@
     "dist"
   ],
   "scripts": {
-    "ci": "npm run build && npm run test && npm run doc && npm run lint && npm run format:check",
-    "test": "npm run vitest run && tsc -p tsconfig.test.json",
+    "ci": "npm run typecheck && npm run build && npm run test && npm run doc && npm run lint && npm run format:check",
+    "test": "npm run vitest run",
     "vitest": "buildah unshare vitest",
     "vitest:ui": "buildah unshare vitest --ui",
     "doc": "typedoc",
-    "build": "vite build && tsc -p tsconfig.json",
+    "typecheck": "npm run typecheck:src && npm run typecheck:test",
+    "typecheck:src": "tsc -p tsconfig.json",
+    "typecheck:test": "tsc -p tsconfig.test.json",
+    "build": "vite build",
     "format:check": "prettier . --list-different",
     "format:fix": "prettier . --write",
     "lint": "eslint ."

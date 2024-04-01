@@ -1,2 +1,2 @@
-export * from "./biosSetup";
 export * from "./biosInstall";
+export * from "./biosSetup";

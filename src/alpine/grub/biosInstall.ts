@@ -1,8 +1,8 @@
 import { writeFile } from "fs/promises";
 import { join } from "path";
 import type { Writable } from "stream";
-import { temporaryContainer } from "../..";
-import type { CacheOptions } from "../apkAdd";
+import { temporaryContainer } from "../../container";
+import type { ContainerCache } from "../../containerCache";
 import type { OffsetAndSize } from "../partitions";
 import { prepareApkPackages } from "../prepareApkPackages";
 import { grubBiosSetup } from "./biosSetup";
@@ -13,8 +13,9 @@ export interface GrubBiosInstallOptions {
   config?: string;
   prefix?: string;
   modules?: string[];
-  cacheOptions?: CacheOptions;
   logger?: Writable;
+  containerCache?: ContainerCache;
+  apkCache?: string;
 }
 
 const grubApkPackages = ["grub", "grub-bios", "grub-efi"];
@@ -25,12 +26,14 @@ export const grubBiosInstall = async ({
   modules,
   prefix,
   config,
-  cacheOptions,
+  containerCache,
+  apkCache,
   logger,
 }: GrubBiosInstallOptions) => {
   const grubImage = await prepareApkPackages({
     apkPackages: grubApkPackages,
-    cacheOptions,
+    containerCache,
+    apkCache,
     logger,
   });
   await temporaryContainer(

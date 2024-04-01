@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { rm } from "fs/promises";
 import type { AtomicStep } from "../../container";
 import type { DirectoryContent } from "./base";
 import {
@@ -7,7 +8,6 @@ import {
   writeDirectoryContent,
 } from "./base";
 import { normalizeRelativePath, safelyJoinSubpath } from "./paths";
-import { rm } from "fs/promises";
 
 export const addFiles = (files: DirectoryContent) => {
   const entries = normalizeDirectoryEntries(files);

@@ -1,16 +1,17 @@
 import type { Writable } from "stream";
-import { prepareApkPackagesAndRun } from "..";
 import type { Container } from "../../container";
 import { withImageOrContainer } from "../../container";
+import type { ContainerCache } from "../../containerCache";
 import { safelyJoinSubpath } from "../../steps/files/paths";
-import type { CacheOptions } from "../apkAdd";
 import { prepareOutputFile } from "../fileUtils";
+import { prepareApkPackagesAndRun } from "../prepareApkPackages";
 
 export interface MksquashfsOptions {
   source: string | Container;
   outputFile: string;
   pathInSource?: string;
-  cacheOptions?: CacheOptions;
+  containerCache?: ContainerCache;
+  apkCache?: string;
   logger?: Writable;
 }
 
@@ -18,7 +19,8 @@ export const mksquashfs = async ({
   source,
   outputFile,
   pathInSource = ".",
-  cacheOptions,
+  containerCache,
+  apkCache,
   logger,
 }: MksquashfsOptions) => {
   outputFile = await prepareOutputFile(outputFile);
@@ -44,7 +46,8 @@ export const mksquashfs = async ({
           "-v",
           `${outputFile}:/out:rw`,
         ],
-        cacheOptions,
+        containerCache,
+        apkCache,
         logger,
       });
     },

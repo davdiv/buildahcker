@@ -10,7 +10,7 @@ import {
   parted,
   writePartitions,
 } from "../src/alpine/partitions";
-import { cacheOptions, logger, tempFolder } from "./testUtils";
+import { apkCache, containerCache, logger, tempFolder } from "./testUtils";
 
 it("grub installation should succeed", { timeout: 120000 }, async () => {
   const source = "alpine";
@@ -20,11 +20,11 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
     commitOptions: {
       timestamp: 0,
     },
-    ...cacheOptions,
+    containerCache,
   });
   await builder.executeStep([
     apkAdd(["grub", "grub-bios"], {
-      ...cacheOptions,
+      apkCache,
     }),
   ]);
   const squashfsImage = join(tempFolder, "squashfs.img");
@@ -32,7 +32,8 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
     source: builder.imageId,
     pathInSource: "/usr/lib/grub",
     outputFile: squashfsImage,
-    cacheOptions,
+    apkCache,
+    containerCache,
     logger,
   });
   const squashfsImageSize = (await stat(squashfsImage)).size;
@@ -51,7 +52,8 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
         type: PartitionType.LinuxData,
       },
     ],
-    cacheOptions,
+    apkCache,
+    containerCache,
     logger,
   });
   await grubBiosInstall({
@@ -60,7 +62,8 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
     modules: ["biosdisk", "part_gpt", "squash4"],
     prefix: "(hd0,2)",
     config: `insmod echo\necho -e "BUILDAHCKER-SUCCESS\\n\\n"\ninsmod sleep\ninsmod halt\nsleep 3\nhalt\n`,
-    cacheOptions,
+    apkCache,
+    containerCache,
     logger,
   });
   await writePartitions({
@@ -81,7 +84,8 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
       "-nographic",
     ],
     buildahRunOptions: ["-v", `${diskImage}:/disk.img`],
-    cacheOptions,
+    apkCache,
+    containerCache,
     logger,
   });
   expect(result.stdout.toString("utf8")).toContain("BUILDAHCKER-SUCCESS");

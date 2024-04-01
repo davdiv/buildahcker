@@ -3,7 +3,7 @@ import { join } from "path";
 import { expect, it } from "vitest";
 import { exec } from "../src";
 import { mksquashfs } from "../src/alpine/mksquashfs";
-import { cacheOptions, logger, tempFolder } from "./testUtils";
+import { apkCache, containerCache, logger, tempFolder } from "./testUtils";
 
 it("mksquashfs should succeed", { timeout: 30000 }, async () => {
   const source = "alpine";
@@ -12,7 +12,8 @@ it("mksquashfs should succeed", { timeout: 30000 }, async () => {
   await mksquashfs({
     source,
     outputFile,
-    cacheOptions,
+    apkCache,
+    containerCache,
     logger,
   });
   const outputImg = await stat(outputFile);
