@@ -8,9 +8,9 @@ import { BaseDirectory, BaseRegularFile, BaseSymbolicLink } from "./base";
 export class MemDirectory extends BaseDirectory {
   public content: DirectoryContent;
   constructor({
-    content,
+    content = {},
     ...attributes
-  }: { content: DirectoryContent } & Partial<FileAttributes>) {
+  }: { content?: DirectoryContent } & Partial<FileAttributes> = {}) {
     super(attributes);
     this.content = content;
   }
@@ -23,9 +23,9 @@ export class MemDirectory extends BaseDirectory {
 export class MemFile extends BaseRegularFile {
   public content: Buffer | string;
   constructor({
-    content,
+    content = "",
     ...attributes
-  }: { content: Buffer | string } & Partial<FileAttributes>) {
+  }: { content?: Buffer | string } & Partial<FileAttributes> = {}) {
     super(attributes);
     this.content = content;
   }
