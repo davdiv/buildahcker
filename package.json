@@ -61,6 +61,11 @@
       "import": "./dist/alpine/mksquashfs/index.js",
       "require": "./dist/alpine/mksquashfs/index.cjs",
       "types": "./dist/alpine/mksquashfs/index.d.ts"
+    },
+    "./alpine/mkvfatfs": {
+      "import": "./dist/alpine/mkvfatfs/index.js",
+      "require": "./dist/alpine/mkvfatfs/index.cjs",
+      "types": "./dist/alpine/mkvfatfs/index.d.ts"
     }
   },
   "files": [

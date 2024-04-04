@@ -17,6 +17,7 @@ export default defineConfig({
         "alpine/partitions/index": "src/alpine/partitions/index.ts",
         "alpine/grub/index": "src/alpine/grub/index.ts",
         "alpine/mksquashfs/index": "src/alpine/mksquashfs/index.ts",
+        "alpine/mkvfatfs/index": "src/alpine/mkvfatfs/index.ts",
       },
       formats: ["es", "cjs"],
     },
