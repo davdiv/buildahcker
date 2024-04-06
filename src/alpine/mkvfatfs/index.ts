@@ -7,22 +7,20 @@ import { prepareOutputFile } from "../fileUtils";
 import { prepareApkPackages } from "../prepareApkPackages";
 
 export interface MkvfatfsOptions {
-  source: ImageOrContainer;
+  inputFolder: string;
   mtoolsSource?: ImageOrContainer;
   outputFileSize: number;
   outputFile: string;
-  pathInSource?: string;
   containerCache?: ContainerCache;
   apkCache?: string;
   logger?: Writable;
 }
 
 export const mkvfatfs = async ({
-  source,
-  mtoolsSource: mtoolsSource,
+  inputFolder,
+  mtoolsSource,
   outputFileSize,
   outputFile,
-  pathInSource = ".",
   containerCache,
   apkCache,
   logger,
@@ -38,42 +36,35 @@ export const mkvfatfs = async ({
   outputFile = await prepareOutputFile(outputFile);
   await truncate(outputFile, outputFileSize);
   await withImageOrContainer(
-    source,
+    mtoolsSource,
     async (container) => {
-      const sourcePath = await container.resolve(pathInSource);
-      await withImageOrContainer(
-        mtoolsSource,
-        async (container) => {
-          await container.run(
-            ["mformat", "-i", "/out", "-F", "::"],
-            ["-v", `${outputFile}:/out:rw`],
-          );
-          const sourceFiles = await readdir(sourcePath);
-          if (sourceFiles.length > 0) {
-            await container.run(
-              [
-                "mcopy",
-                "-i",
-                "/out",
-                "-s",
-                "-b",
-                "-p",
-                ...sourceFiles.map((file) => `./${file}`),
-                "::/",
-              ],
-              [
-                "-v",
-                `${sourcePath}:/in:ro`,
-                "-v",
-                `${outputFile}:/out:rw`,
-                "--workingdir",
-                "/in",
-              ],
-            );
-          }
-        },
-        { logger },
+      await container.run(
+        ["mformat", "-i", "/out", "-F", "::"],
+        ["-v", `${outputFile}:/out:rw`],
       );
+      const sourceFiles = await readdir(inputFolder);
+      if (sourceFiles.length > 0) {
+        await container.run(
+          [
+            "mcopy",
+            "-i",
+            "/out",
+            "-s",
+            "-b",
+            "-p",
+            ...sourceFiles.map((file) => `./${file}`),
+            "::/",
+          ],
+          [
+            "-v",
+            `${inputFolder}:/in:ro`,
+            "-v",
+            `${outputFile}:/out:rw`,
+            "--workingdir",
+            "/in",
+          ],
+        );
+      }
     },
     { logger },
   );

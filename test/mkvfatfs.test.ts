@@ -6,12 +6,10 @@ import { mkvfatfs } from "../src/alpine/mkvfatfs";
 import { apkCache, containerCache, logger, tempFolder } from "./testUtils";
 
 it("mkvfatfs should succeed", { timeout: 30000 }, async () => {
-  const source = "alpine";
-  await exec(["buildah", "pull", source], { logger });
+  await exec(["buildah", "pull", "alpine"], { logger });
   const outputFile = join(tempFolder, "output.img");
   await mkvfatfs({
-    source,
-    pathInSource: "/etc",
+    inputFolder: __dirname,
     outputFileSize: 1000000,
     outputFile,
     apkCache,

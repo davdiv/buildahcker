@@ -1,7 +1,7 @@
 import { stat } from "fs/promises";
 import { join } from "path";
 import { expect, it } from "vitest";
-import { ImageBuilder, exec } from "../src";
+import { ImageBuilder, exec, temporaryContainer } from "../src";
 import { apkAdd, prepareApkPackagesAndRun } from "../src/alpine";
 import { grubBiosInstall } from "../src/alpine/grub";
 import { mksquashfs } from "../src/alpine/mksquashfs";
@@ -28,13 +28,14 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
     }),
   ]);
   const squashfsImage = join(tempFolder, "squashfs.img");
-  await mksquashfs({
-    source: builder.imageId,
-    pathInSource: "/usr/lib/grub",
-    outputFile: squashfsImage,
-    apkCache,
-    containerCache,
-    logger,
+  await temporaryContainer(builder.imageId, async (container) => {
+    await mksquashfs({
+      inputFolder: await container.resolve("usr/lib/grub"),
+      outputFile: squashfsImage,
+      apkCache,
+      containerCache,
+      logger,
+    });
   });
   const squashfsImageSize = (await stat(squashfsImage)).size;
   const diskImage = join(tempFolder, "disk.img");

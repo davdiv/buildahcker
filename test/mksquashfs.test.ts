@@ -6,11 +6,10 @@ import { mksquashfs } from "../src/alpine/mksquashfs";
 import { apkCache, containerCache, logger, tempFolder } from "./testUtils";
 
 it("mksquashfs should succeed", { timeout: 30000 }, async () => {
-  const source = "alpine";
-  await exec(["buildah", "pull", source], { logger });
+  await exec(["buildah", "pull", "alpine"], { logger });
   const outputFile = join(tempFolder, "output.img");
   await mksquashfs({
-    source,
+    inputFolder: __dirname,
     outputFile,
     apkCache,
     containerCache,
