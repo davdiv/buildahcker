@@ -1,3 +1,5 @@
+import { mkdtemp, rm } from "fs/promises";
+import { join, relative, sep } from "path";
 import type { ExecOptions } from "./exec";
 import { exec } from "./exec";
 import {
@@ -70,6 +72,27 @@ export class Container implements StepExecutor {
       this.#mountPath = res;
     }
     return res;
+  }
+
+  toPathInContainer(absolutePath: string) {
+    const rel = relative(this.mountPath, absolutePath).split(sep);
+    if (rel[0] === "..") {
+      throw new Error("Path is not in container");
+    }
+    rel.unshift("");
+    return rel.join(sep);
+  }
+
+  async tempFolder() {
+    const tmp = await this.resolve("tmp");
+    const tempFolder = await mkdtemp(join(tmp, "buildahcker-"));
+    return {
+      pathInHost: tempFolder,
+      pathInContainer: this.toPathInContainer(tempFolder),
+      remove: async () => {
+        await rm(tempFolder, { recursive: true, force: true });
+      },
+    };
   }
 
   async resolve(subPath: string, strictDotDot?: boolean) {

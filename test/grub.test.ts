@@ -3,7 +3,7 @@ import { join } from "path";
 import { expect, it } from "vitest";
 import { ImageBuilder, exec, temporaryContainer } from "../src";
 import { apkAdd, prepareApkPackagesAndRun } from "../src/alpine";
-import { grubBiosInstall } from "../src/alpine/grub";
+import { grubBiosSetup, grubMkimage } from "../src/alpine/grub";
 import { mksquashfs } from "../src/alpine/mksquashfs";
 import {
   PartitionType,
@@ -12,7 +12,7 @@ import {
 } from "../src/alpine/partitions";
 import { apkCache, containerCache, logger, tempFolder } from "./testUtils";
 
-it("grub installation should succeed", { timeout: 120000 }, async () => {
+it("grub bios installation should succeed", { timeout: 120000 }, async () => {
   const source = "alpine";
   await exec(["buildah", "pull", source], { logger });
   const builder = await ImageBuilder.from(source, {
@@ -28,6 +28,8 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
     }),
   ]);
   const squashfsImage = join(tempFolder, "squashfs.img");
+  const grubCoreFile = join(tempFolder, "grubCore.img");
+  const grubBootFile = join(tempFolder, "grubBoot.img");
   await temporaryContainer(builder.imageId, async (container) => {
     await mksquashfs({
       inputFolder: await container.resolve("usr/lib/grub"),
@@ -36,15 +38,28 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
       containerCache,
       logger,
     });
+    await grubMkimage({
+      outputCoreFile: grubCoreFile,
+      outputBootFile: grubBootFile,
+      grubSource: container,
+      target: "i386-pc",
+      modules: ["biosdisk", "part_gpt", "squash4"],
+      prefix: "(hd0,2)",
+      config: `insmod echo\necho -e "BUILDAHCKER-SUCCESS\\n\\n"\ninsmod sleep\ninsmod halt\nsleep 3\nhalt\n`,
+      apkCache,
+      containerCache,
+      logger,
+    });
   });
   const squashfsImageSize = (await stat(squashfsImage)).size;
+  const grubCoreImageSize = (await stat(grubCoreFile)).size;
   const diskImage = join(tempFolder, "disk.img");
   const partitions = await parted({
     outputFile: diskImage,
     partitions: [
       {
         name: "grub",
-        size: 100000,
+        size: grubCoreImageSize,
         type: PartitionType.BiosBoot,
       },
       {
@@ -57,15 +72,11 @@ it("grub installation should succeed", { timeout: 120000 }, async () => {
     containerCache,
     logger,
   });
-  await grubBiosInstall({
+  await grubBiosSetup({
     imageFile: diskImage,
     partition: partitions[0],
-    modules: ["biosdisk", "part_gpt", "squash4"],
-    prefix: "(hd0,2)",
-    config: `insmod echo\necho -e "BUILDAHCKER-SUCCESS\\n\\n"\ninsmod sleep\ninsmod halt\nsleep 3\nhalt\n`,
-    apkCache,
-    containerCache,
-    logger,
+    bootFile: grubBootFile,
+    coreFile: grubCoreFile,
   });
   await writePartitions({
     outputFile: diskImage,

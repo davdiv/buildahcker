@@ -1,2 +1,2 @@
-export * from "./biosInstall";
+export * from "./mkimage";
 export * from "./biosSetup";
