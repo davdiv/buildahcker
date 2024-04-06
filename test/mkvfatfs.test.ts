@@ -10,7 +10,7 @@ it("mkvfatfs should succeed", { timeout: 30000 }, async () => {
   const outputFile = join(tempFolder, "output.img");
   await mkvfatfs({
     inputFolder: __dirname,
-    outputFileSize: 1000000,
+    outputFileSize: 33 * 1024 * 1024,
     outputFile,
     apkCache,
     containerCache,
@@ -18,5 +18,5 @@ it("mkvfatfs should succeed", { timeout: 30000 }, async () => {
   });
   const outputImg = await stat(outputFile);
   expect(outputImg.isFile()).toBeTruthy();
-  expect(outputImg.size).toBe(1000000);
+  expect(outputImg.size).toBe(33 * 1024 * 1024);
 });

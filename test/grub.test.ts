@@ -5,6 +5,7 @@ import { ImageBuilder, exec, temporaryContainer } from "../src";
 import { apkAdd, prepareApkPackagesAndRun } from "../src/alpine";
 import { grubBiosSetup, grubMkimage } from "../src/alpine/grub";
 import { mksquashfs } from "../src/alpine/mksquashfs";
+import { mkvfatfs } from "../src/alpine/mkvfatfs";
 import {
   PartitionType,
   parted,
@@ -44,7 +45,7 @@ it("grub bios installation should succeed", { timeout: 120000 }, async () => {
       grubSource: container,
       target: "i386-pc",
       modules: ["biosdisk", "part_gpt", "squash4"],
-      prefix: "(hd0,2)",
+      prefix: "(hd0,2)/",
       config: `insmod echo\necho -e "BUILDAHCKER-SUCCESS\\n\\n"\ninsmod sleep\ninsmod halt\nsleep 3\nhalt\n`,
       apkCache,
       containerCache,
@@ -91,6 +92,106 @@ it("grub bios installation should succeed", { timeout: 120000 }, async () => {
     apkPackages: ["qemu-system-x86_64"],
     command: [
       "qemu-system-x86_64",
+      "--drive",
+      "format=raw,file=/disk.img",
+      "-nographic",
+    ],
+    buildahRunOptions: ["-v", `${diskImage}:/disk.img`],
+    apkCache,
+    containerCache,
+    logger,
+  });
+  expect(result.stdout.toString("utf8")).toContain("BUILDAHCKER-SUCCESS");
+});
+
+it("grub efi installation should succeed", { timeout: 120000 }, async () => {
+  const source = "alpine";
+  await exec(["buildah", "pull", source], { logger });
+  const builder = await ImageBuilder.from(source, {
+    logger,
+    commitOptions: {
+      timestamp: 0,
+    },
+    containerCache,
+  });
+  await builder.executeStep([
+    apkAdd(["grub", "grub-efi"], {
+      apkCache,
+    }),
+  ]);
+  const squashfsImage = join(tempFolder, "squashfs.img");
+  const efiImage = join(tempFolder, "efi.img");
+  const grubCoreFile = join(tempFolder, "efi", "EFI", "boot", "bootx64.efi");
+  await temporaryContainer(builder.imageId, async (container) => {
+    await mksquashfs({
+      inputFolder: await container.resolve("usr/lib/grub"),
+      outputFile: squashfsImage,
+      apkCache,
+      containerCache,
+      logger,
+    });
+    await grubMkimage({
+      outputCoreFile: grubCoreFile,
+      grubSource: container,
+      target: "x86_64-efi",
+      modules: ["part_gpt", "squash4"],
+      prefix: "(hd0,gpt2)/",
+      config: `insmod echo\necho -e "BUILDAHCKER-SUCCESS\\n\\n"\ninsmod sleep\ninsmod halt\nsleep 3\nhalt\n`,
+      apkCache,
+      containerCache,
+      logger,
+    });
+    const grubCoreImageSize = (await stat(grubCoreFile)).size;
+    await mkvfatfs({
+      inputFolder: join(tempFolder, "efi"),
+      outputFile: efiImage,
+      outputFileSize: Math.max(grubCoreImageSize, 33 * 1024 * 1024),
+      apkCache,
+      containerCache,
+      logger,
+    });
+  });
+  const squashfsImageSize = (await stat(squashfsImage)).size;
+  const efiImageSize = (await stat(efiImage)).size;
+
+  const diskImage = join(tempFolder, "disk.img");
+  const partitions = await parted({
+    outputFile: diskImage,
+    partitions: [
+      {
+        name: "efi",
+        size: efiImageSize,
+        type: PartitionType.EfiSystem,
+      },
+      {
+        name: "linux",
+        size: squashfsImageSize,
+        type: PartitionType.LinuxData,
+      },
+    ],
+    apkCache,
+    containerCache,
+    logger,
+  });
+  await writePartitions({
+    outputFile: diskImage,
+    partitions: [
+      {
+        inputFile: efiImage,
+        output: partitions[0],
+      },
+      {
+        inputFile: squashfsImage,
+        output: partitions[1],
+      },
+    ],
+  });
+  const result = await prepareApkPackagesAndRun({
+    apkPackages: ["qemu-system-x86_64", "ovmf"],
+    command: [
+      "qemu-system-x86_64",
+      "-bios",
+      "/usr/share/ovmf/bios.bin",
       "--drive",
       "format=raw,file=/disk.img",
       "-nographic",
