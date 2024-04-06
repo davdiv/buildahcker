@@ -1,14 +1,15 @@
 import type { Writable } from "stream";
-import type { Container } from "../../container";
+import type { ImageOrContainer } from "../../container";
 import { withImageOrContainer } from "../../container";
 import type { ContainerCache } from "../../containerCache";
 import { prepareOutputFile } from "../fileUtils";
 import { prepareApkPackagesAndRun } from "../prepareApkPackages";
 
 export interface MksquashfsOptions {
-  source: string | Container;
+  source: ImageOrContainer;
   outputFile: string;
   pathInSource?: string;
+  squashfsToolsSource?: ImageOrContainer;
   containerCache?: ContainerCache;
   apkCache?: string;
   logger?: Writable;
@@ -16,6 +17,7 @@ export interface MksquashfsOptions {
 
 export const mksquashfs = async ({
   source,
+  squashfsToolsSource,
   outputFile,
   pathInSource = ".",
   containerCache,
@@ -29,6 +31,7 @@ export const mksquashfs = async ({
       const sourcePath = await container.resolve(pathInSource);
       await prepareApkPackagesAndRun({
         apkPackages: ["squashfs-tools"],
+        existingSource: squashfsToolsSource,
         command: ["mksquashfs", "/in", "/out", "-noappend", "-no-xattrs"],
         buildahRunOptions: [
           "-v",

@@ -1,8 +1,8 @@
 import type { ExecOptions } from "./exec";
 import { exec } from "./exec";
 import {
-  resolveParentInContainer,
   resolveInContainer,
+  resolveParentInContainer,
 } from "./resolveInContainer";
 
 export interface AtomicStep {
@@ -143,8 +143,10 @@ export const temporaryContainer = async <T>(
   }
 };
 
+export type ImageOrContainer = Container | string;
+
 export const withImageOrContainer = async <T>(
-  source: Container | string,
+  source: ImageOrContainer,
   fn: (container: Container) => Promise<T>,
   containerOptions?: ContainerOptions,
 ) => {
@@ -153,3 +155,19 @@ export const withImageOrContainer = async <T>(
   }
   return await fn(source);
 };
+
+export const runInImageOrContainer = async ({
+  source,
+  command,
+  buildahRunOptions,
+  ...containerOptions
+}: {
+  source: ImageOrContainer;
+  command: string[];
+  buildahRunOptions?: string[];
+} & ContainerOptions) =>
+  await withImageOrContainer(
+    source,
+    async (container) => await container.run(command, buildahRunOptions),
+    containerOptions,
+  );

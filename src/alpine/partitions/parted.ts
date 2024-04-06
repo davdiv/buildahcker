@@ -1,5 +1,6 @@
 import { truncate } from "fs/promises";
 import type { Writable } from "stream";
+import type { ImageOrContainer } from "../../container";
 import type { ContainerCache } from "../../containerCache";
 import { prepareOutputFile } from "../fileUtils";
 import { prepareApkPackagesAndRun } from "../prepareApkPackages";
@@ -20,6 +21,7 @@ export interface Partition {
 export interface PartedOptions {
   outputFile: string;
   partitions: Partition[];
+  partedSource?: ImageOrContainer;
   containerCache?: ContainerCache;
   apkCache?: string;
   logger?: Writable;
@@ -51,6 +53,7 @@ export const parted = async (config: PartedOptions) => {
   await truncate(outputFile, size * sectorSize);
   await prepareApkPackagesAndRun({
     apkPackages: ["parted"],
+    existingSource: config.partedSource,
     command: ["parted", ...cmdLine],
     buildahRunOptions: ["-v", `${outputFile}:/out:rw`],
     containerCache: config.containerCache,

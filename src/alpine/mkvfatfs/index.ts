@@ -1,13 +1,14 @@
 import { readdir, truncate } from "fs/promises";
 import type { Writable } from "stream";
-import type { Container } from "../../container";
-import { temporaryContainer, withImageOrContainer } from "../../container";
+import type { ImageOrContainer } from "../../container";
+import { withImageOrContainer } from "../../container";
 import type { ContainerCache } from "../../containerCache";
 import { prepareOutputFile } from "../fileUtils";
 import { prepareApkPackages } from "../prepareApkPackages";
 
 export interface MkvfatfsOptions {
-  source: string | Container;
+  source: ImageOrContainer;
+  mtoolsSource?: ImageOrContainer;
   outputFileSize: number;
   outputFile: string;
   pathInSource?: string;
@@ -18,6 +19,7 @@ export interface MkvfatfsOptions {
 
 export const mkvfatfs = async ({
   source,
+  mtoolsSource: mtoolsSource,
   outputFileSize,
   outputFile,
   pathInSource = ".",
@@ -25,20 +27,22 @@ export const mkvfatfs = async ({
   apkCache,
   logger,
 }: MkvfatfsOptions) => {
-  const mtoolsImage = await prepareApkPackages({
-    apkPackages: ["mtools"],
-    containerCache,
-    apkCache,
-    logger,
-  });
+  if (!mtoolsSource) {
+    mtoolsSource = await prepareApkPackages({
+      apkPackages: ["mtools"],
+      containerCache,
+      apkCache,
+      logger,
+    });
+  }
   outputFile = await prepareOutputFile(outputFile);
   await truncate(outputFile, outputFileSize);
   await withImageOrContainer(
     source,
     async (container) => {
       const sourcePath = await container.resolve(pathInSource);
-      await temporaryContainer(
-        mtoolsImage,
+      await withImageOrContainer(
+        mtoolsSource,
         async (container) => {
           await container.run(
             ["mformat", "-i", "/out", "-F", "::"],
@@ -68,9 +72,7 @@ export const mkvfatfs = async ({
             );
           }
         },
-        {
-          logger,
-        },
+        { logger },
       );
     },
     { logger },

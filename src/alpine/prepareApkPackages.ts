@@ -1,6 +1,6 @@
 import type { Writable } from "stream";
-import type { CommitOptions } from "../container";
-import { temporaryContainer } from "../container";
+import type { CommitOptions, ImageOrContainer } from "../container";
+import { runInImageOrContainer } from "../container";
 import type { ContainerCache } from "../containerCache";
 import { ImageBuilder } from "../imageBuilder";
 import { apkAdd } from "./apkAdd";
@@ -16,6 +16,7 @@ export interface PrepareApkPackagesOptions {
 
 export interface PrepareApkPackagesAndRunOptions
   extends PrepareApkPackagesOptions {
+  existingSource?: ImageOrContainer;
   command: string[];
   buildahRunOptions: string[];
 }
@@ -38,12 +39,14 @@ export const prepareApkPackages = async ({
 };
 
 export const prepareApkPackagesAndRun = async ({
+  existingSource,
   command,
   buildahRunOptions,
   ...installOptions
 }: PrepareApkPackagesAndRunOptions) =>
-  await temporaryContainer(
-    await prepareApkPackages(installOptions),
-    async (container) => await container.run(command, buildahRunOptions),
-    { logger: installOptions.logger },
-  );
+  await runInImageOrContainer({
+    source: existingSource ?? (await prepareApkPackages(installOptions)),
+    command,
+    buildahRunOptions,
+    logger: installOptions.logger,
+  });
