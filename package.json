@@ -77,7 +77,6 @@
     "vitest": "buildah unshare vitest",
     "vitest:ui": "buildah unshare vitest --ui",
     "doc": "typedoc",
-    "typecheck": "npm run typecheck:src && npm run typecheck:test",
     "build": "vite build && tsc -p tsconfig.json",
     "format:check": "prettier . --list-different",
     "format:fix": "prettier . --write",
