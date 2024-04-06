@@ -1,6 +1,6 @@
 {
   "name": "buildahcker",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Buildahcker is a node.js library to create and run commands in OCI (Open Container Initiative) container images (or docker images), based on Buildah and a hash-based cache. It also contains utilities to easily create a partitioned bootable disk image of a Linux system.",
   "keywords": [
     "buildah",
