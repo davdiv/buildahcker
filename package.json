@@ -41,31 +41,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
-    },
-    "./alpine": {
-      "import": "./dist/alpine/index.js",
-      "require": "./dist/alpine/index.cjs",
-      "types": "./dist/alpine/index.d.ts"
-    },
-    "./alpine/partitions": {
-      "import": "./dist/alpine/partitions/index.js",
-      "require": "./dist/alpine/partitions/index.cjs",
-      "types": "./dist/alpine/partitions/index.d.ts"
-    },
-    "./alpine/grub": {
-      "import": "./dist/alpine/grub/index.js",
-      "require": "./dist/alpine/grub/index.cjs",
-      "types": "./dist/alpine/grub/index.d.ts"
-    },
-    "./alpine/mksquashfs": {
-      "import": "./dist/alpine/mksquashfs/index.js",
-      "require": "./dist/alpine/mksquashfs/index.cjs",
-      "types": "./dist/alpine/mksquashfs/index.d.ts"
-    },
-    "./alpine/mkvfatfs": {
-      "import": "./dist/alpine/mkvfatfs/index.js",
-      "require": "./dist/alpine/mkvfatfs/index.cjs",
-      "types": "./dist/alpine/mkvfatfs/index.d.ts"
     }
   },
   "files": [

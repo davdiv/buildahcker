@@ -4,3 +4,4 @@ export * from "./exec";
 export * from "./imageBuilder";
 export * from "./inspect";
 export * from "./steps";
+export * from "./alpine";
