@@ -6,3 +6,4 @@ export * from "./mksquashfs";
 export * from "./mkvfatfs";
 export * from "./partitions";
 export * from "./prepareApkPackages";
+export * from "./ssh";
