@@ -11,7 +11,7 @@ export default defineConfig({
       external: [...builtinModules],
     },
     lib: {
-      entry: "src/index.ts",
+      entry: { index: "src/index.ts" },
       formats: ["es", "cjs"],
     },
   },
