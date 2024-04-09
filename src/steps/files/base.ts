@@ -225,7 +225,13 @@ export abstract class BaseDirectory extends BaseFileWithCachedContent<
     return await hashDirectoryContent(await this.getContent());
   }
   async writeContentTo(destinationPath: string) {
-    await mkdir(destinationPath);
+    try {
+      await mkdir(destinationPath);
+    } catch (error: any) {
+      if (error.code !== "EEXIST") {
+        throw error;
+      }
+    }
     for (const [filePath, file] of await this.getContent()) {
       await file.writeTo(join(destinationPath, filePath));
     }
