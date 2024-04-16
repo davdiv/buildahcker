@@ -135,10 +135,11 @@ case "$*" in
       echo "Current system was already marked as stable."
     fi
     ;;
-  'reboot-if-unstable')
-    if [ "$BUILDAHCKER_STABLE" != "$BUILDHACKER_CURRENT" ]; then
-      echo "Current system is not marked as stable, rebooting..."
-      reboot
+  'is-stable')
+    if [ "$BUILDAHCKER_STABLE" == "$BUILDHACKER_CURRENT" ]; then
+      exit 0
+    else
+      exit 1
     fi
     ;;
   *)
