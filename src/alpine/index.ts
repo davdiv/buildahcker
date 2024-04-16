@@ -7,3 +7,4 @@ export * from "./mkvfatfs";
 export * from "./partitions";
 export * from "./prepareApkPackages";
 export * from "./ssh";
+export * from "./abpartitions";

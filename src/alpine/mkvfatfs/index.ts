@@ -1,9 +1,10 @@
+import { createHash } from "crypto";
 import { readdir, truncate } from "fs/promises";
 import type { Writable } from "stream";
-import type { ImageOrContainer } from "../../container";
+import type { AtomicStep, ImageOrContainer } from "../../container";
 import { withImageOrContainer } from "../../container";
 import type { ContainerCache } from "../../containerCache";
-import { prepareOutputFile } from "../fileUtils";
+import { prepareOutputFile } from "../../fileUtils";
 import { prepareApkPackages } from "../prepareApkPackages";
 
 export interface MkvfatfsOptions {
@@ -68,4 +69,29 @@ export const mkvfatfs = async ({
     },
     { logger },
   );
+};
+
+// Note that paths in mkvfatfsStep are inside the container
+export const mkvfatfsStep = ({
+  inputFolder: inputFolderInContainer,
+  outputFile: outputFileInContainer,
+  ...otherOptions
+}: MkvfatfsOptions) => {
+  const step: AtomicStep = async (container) => {
+    const inputFolder = await container.resolve(inputFolderInContainer);
+    const outputFile = await container.resolve(outputFileInContainer);
+    await mkvfatfs({ inputFolder, outputFile, ...otherOptions });
+  };
+  step.getCacheKey = async () => {
+    const hash = createHash("sha256");
+    hash.update(
+      JSON.stringify({
+        inputFolder: inputFolderInContainer,
+        outputFile: outputFileInContainer,
+        outputFileSize: otherOptions.outputFileSize,
+      }),
+    );
+    return `MKVFATFS-${hash.digest("base64url")}`;
+  };
+  return step;
 };

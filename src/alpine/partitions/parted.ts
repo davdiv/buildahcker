@@ -2,7 +2,7 @@ import { truncate } from "fs/promises";
 import type { Writable } from "stream";
 import type { ImageOrContainer } from "../../container";
 import type { ContainerCache } from "../../containerCache";
-import { prepareOutputFile } from "../fileUtils";
+import { prepareOutputFile } from "../../fileUtils";
 import { prepareApkPackagesAndRun } from "../prepareApkPackages";
 import type { OffsetAndSize } from "./writePartitions";
 

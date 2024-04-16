@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { closeFile, openFile, readFromFile } from "../fileUtils";
+import { closeFile, openFile, readFromFile } from "../../fileUtils";
 import type { OffsetAndSize } from "../partitions";
 import { writePartitions } from "../partitions";
 

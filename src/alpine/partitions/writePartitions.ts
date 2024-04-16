@@ -1,6 +1,7 @@
 import { createReadStream, createWriteStream } from "fs";
 import { pipeline } from "stream/promises";
-import { closeFile, openFile } from "../fileUtils";
+import { closeFile, openFile } from "../../fileUtils";
+import { stat } from "fs/promises";
 
 export interface OffsetAndSize {
   offset: number;
@@ -39,11 +40,17 @@ export const writePartitions = async (config: WritePartitionsOptions) => {
       });
       if ("inputFile" in partition) {
         const inputStart = partition.input?.offset ?? 0;
+        const inputSize =
+          partition.input?.size ??
+          (await stat(partition.inputFile)).size - inputStart;
+        if (inputSize > partition.output.size) {
+          throw new Error(
+            `Partition too small for content: ${inputSize} > ${partition.output.size}`,
+          );
+        }
         const inputStream = createReadStream(partition.inputFile, {
           start: inputStart,
-          end:
-            inputStart +
-            Math.min(partition.output.size, partition.input?.size ?? Infinity),
+          end: inputStart + inputSize,
           autoClose: false,
         });
         try {
@@ -52,13 +59,14 @@ export const writePartitions = async (config: WritePartitionsOptions) => {
           await inputStream.close();
         }
       } else {
+        if (partition.inputBuffer.length > partition.output.size) {
+          throw new Error(
+            `Partition too small for content: ${partition.inputBuffer.length} > ${partition.output.size}`,
+          );
+        }
         await new Promise<void>((resolve, reject) =>
-          outputStream.write(
-            partition.inputBuffer.subarray(
-              0,
-              Math.min(partition.output.size, partition.inputBuffer.length),
-            ),
-            (error) => (error ? reject(error) : resolve()),
+          outputStream.write(partition.inputBuffer, (error) =>
+            error ? reject(error) : resolve(),
           ),
         );
       }

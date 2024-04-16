@@ -92,7 +92,7 @@ it("grub bios installation should succeed", { timeout: 120000 }, async () => {
     apkPackages: ["qemu-system-x86_64"],
     command: [
       "qemu-system-x86_64",
-      "--drive",
+      "-drive",
       "format=raw,file=/disk.img",
       "-nographic",
     ],
@@ -192,7 +192,7 @@ it("grub efi installation should succeed", { timeout: 120000 }, async () => {
       "qemu-system-x86_64",
       "-bios",
       "/usr/share/ovmf/bios.bin",
-      "--drive",
+      "-drive",
       "format=raw,file=/disk.img",
       "-nographic",
     ],

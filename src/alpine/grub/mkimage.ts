@@ -1,11 +1,12 @@
 import { cp, writeFile } from "fs/promises";
 import { join } from "path";
 import type { Writable } from "stream";
-import type { ImageOrContainer } from "../../container";
+import type { AtomicStep, ImageOrContainer } from "../../container";
 import { withImageOrContainer } from "../../container";
 import type { ContainerCache } from "../../containerCache";
-import { prepareOutputFile } from "../fileUtils";
+import { prepareOutputFile } from "../../fileUtils";
 import { prepareApkPackages } from "../prepareApkPackages";
+import { createHash } from "crypto";
 
 export interface GrubMkImageOptions {
   outputCoreFile: string;
@@ -82,4 +83,46 @@ export const grubMkimage = async ({
     },
     { logger },
   );
+};
+
+// Note that paths in grubMkimageStep are inside the container
+export const grubMkimageStep = ({
+  outputCoreFile: outputCoreFileInContainer,
+  outputBootFile: outputBootFileInContainer,
+  modules,
+  prefix,
+  config,
+  target,
+  ...otherOptions
+}: GrubMkImageOptions) => {
+  const step: AtomicStep = async (container) => {
+    const outputCoreFile = await container.resolve(outputCoreFileInContainer);
+    const outputBootFile = outputBootFileInContainer
+      ? await container.resolve(outputBootFileInContainer)
+      : undefined;
+    await grubMkimage({
+      outputCoreFile,
+      outputBootFile,
+      modules,
+      prefix,
+      config,
+      target,
+      ...otherOptions,
+    });
+  };
+  step.getCacheKey = async () => {
+    const hash = createHash("sha256");
+    hash.update(
+      JSON.stringify({
+        outputCoreFile: outputCoreFileInContainer,
+        outputBootFile: outputBootFileInContainer,
+        modules,
+        prefix,
+        config,
+        target,
+      }),
+    );
+    return `GRUB-MKIMAGE-${hash.digest("base64url")}`;
+  };
+  return step;
 };
