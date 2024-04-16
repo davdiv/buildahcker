@@ -19,6 +19,7 @@ const minEFIPartitionSize = 33 * 1024 * 1024;
 
 export interface ABPartitionsGrubPartitionOptions {
   linuxDiskDevice?: string;
+  grubTimeout?: number;
   grubDiskDevice?: string;
   grubSourceImage: string;
   grubSourcePath?: string;
@@ -34,6 +35,7 @@ export interface ABPartitionsGrubPartitionOptions {
 }
 
 export const abpartitionsGrubPartition = async ({
+  grubTimeout = 3,
   linuxDiskDevice = "/dev/sda",
   grubDiskDevice = "hd0",
   grubSourceImage,
@@ -71,7 +73,7 @@ if [ $buildahcker_new != n ] ; then
   save_env --file $envfile buildahcker_stable buildahcker_new
 fi
 export buildahcker_params
-timeout=3
+set timeout=${grubTimeout}
 menuentry A --id=a {
   set root=(${grubDiskDevice},gpt${rootPartitionAIndex})
   set buildahcker_params="buildahcker_current=a buildahcker_grubenv_device=${linuxDiskDevice}${grubEnvPartitionIndex} buildahcker_grubenv=${grubEnvPath} buildahcker_other_root=${linuxDiskDevice}${rootPartitionBIndex} root=${linuxDiskDevice}${rootPartitionAIndex}"
@@ -240,6 +242,7 @@ export const abpartitionsBiosPartition = async ({
 
 export interface ABPartitionsDiskOptions {
   bootType?: "bios" | "efi" | "both";
+  grubTimeout?: number;
   linuxDiskDevice?: string;
   grubDiskDevice?: string;
   efiPartitionSize?: number;
@@ -260,6 +263,7 @@ export interface ABPartitionsDiskOptions {
 
 export const abpartitionsDisk = async ({
   bootType = "both",
+  grubTimeout,
   linuxDiskDevice,
   grubDiskDevice,
   efiPartitionSize,
@@ -349,6 +353,7 @@ export const abpartitionsDisk = async ({
     type: PartitionType.LinuxData,
     file: await abpartitionsGrubPartition({
       linuxDiskDevice,
+      grubTimeout,
       grubDiskDevice,
       grubSourceImage,
       grubSourcePath,
