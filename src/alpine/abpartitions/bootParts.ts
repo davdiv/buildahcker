@@ -19,6 +19,7 @@ const minEFIPartitionSize = 33 * 1024 * 1024;
 
 export interface ABPartitionsGrubPartitionOptions {
   linuxDiskDevice?: string;
+  grubDiskDevice?: string;
   grubSourceImage: string;
   grubSourcePath?: string;
   grubEnvPartitionIndex: number;
@@ -32,6 +33,7 @@ export interface ABPartitionsGrubPartitionOptions {
 
 export const abpartitionsGrubPartition = async ({
   linuxDiskDevice = "/dev/sda",
+  grubDiskDevice = "hd0",
   grubSourceImage,
   grubSourcePath = "/usr/lib/grub",
   grubEnvPartitionIndex,
@@ -51,7 +53,7 @@ export const abpartitionsGrubPartition = async ({
       [join(grubSourcePath, "grub.cfg")]: new MemFile({
         content: `
 insmod all_video
-set envfile=(hd0,gpt${grubEnvPartitionIndex})+1024
+set envfile=(${grubDiskDevice},gpt${grubEnvPartitionIndex})+1024
 load_env --file $envfile buildahcker_stable buildahcker_new
 if [ ( $buildahcker_new == b ) -o ( buildahcker_stable == b ) ] ; then
   set default=b
@@ -70,12 +72,12 @@ fi
 export buildahcker_params
 timeout=3
 menuentry A --id=a {
-  set root=(hd0,gpt${rootPartitionAIndex})
+  set root=(${grubDiskDevice},gpt${rootPartitionAIndex})
   set buildahcker_params="buildahcker_current=a buildahcker_stable=$buildahcker_stable buildahcker_other_root=${linuxDiskDevice}${rootPartitionBIndex} root=${linuxDiskDevice}${rootPartitionAIndex}"
   configfile /boot/grub.cfg
 }
 menuentry B --id=b {
-  set root=(hd0,gpt${rootPartitionBIndex})
+  set root=(${grubDiskDevice},gpt${rootPartitionBIndex})
   set buildahcker_params="buildahcker_current=b buildahcker_stable=$buildahcker_stable buildahcker_other_root=${linuxDiskDevice}${rootPartitionAIndex} root=${linuxDiskDevice}${rootPartitionBIndex}"
   configfile /boot/grub.cfg
 }
@@ -126,6 +128,7 @@ export interface ABPartitionsEfiPartitionOptions {
   grubSourceImage: string;
   grubPartitionIndex: number;
   efiPartitionSize: number;
+  grubDiskDevice?: string;
   mtoolsSource?: ImageOrContainer;
   containerCache?: ContainerCache;
   apkCache?: string;
@@ -135,6 +138,7 @@ export interface ABPartitionsEfiPartitionOptions {
 export const abpartitionsEfiPartition = async ({
   grubSourceImage,
   grubPartitionIndex,
+  grubDiskDevice = "hd0",
   efiPartitionSize,
   mtoolsSource,
   containerCache,
@@ -154,7 +158,7 @@ export const abpartitionsEfiPartition = async ({
       grubSource: grubSourceImage,
       target: "x86_64-efi",
       modules: ["part_gpt", "squash4"],
-      prefix: `(hd0,gpt${grubPartitionIndex})/`,
+      prefix: `(${grubDiskDevice},gpt${grubPartitionIndex})/`,
       containerCache,
       apkCache,
       logger,
@@ -175,6 +179,7 @@ export const abpartitionsEfiPartition = async ({
 export interface ABPartitionsBiosPartitionOptions {
   grubSourceImage: string;
   grubPartitionIndex: number;
+  grubDiskDevice?: string;
   containerCache?: ContainerCache;
   apkCache?: string;
   logger?: Writable;
@@ -183,6 +188,7 @@ export interface ABPartitionsBiosPartitionOptions {
 export const abpartitionsBiosPartition = async ({
   grubSourceImage,
   grubPartitionIndex,
+  grubDiskDevice = "hd0",
   containerCache,
   apkCache,
   logger,
@@ -201,7 +207,7 @@ export const abpartitionsBiosPartition = async ({
       grubSource: grubSourceImage,
       target: "i386-pc",
       modules: ["biosdisk", "part_gpt", "squash4"],
-      prefix: `(hd0,gpt${grubPartitionIndex})/`,
+      prefix: `(${grubDiskDevice},gpt${grubPartitionIndex})/`,
       containerCache,
       apkCache,
       logger,
@@ -216,6 +222,7 @@ export const abpartitionsBiosPartition = async ({
 export interface ABPartitionsDiskOptions {
   bootType?: "bios" | "efi" | "both";
   linuxDiskDevice?: string;
+  grubDiskDevice?: string;
   efiPartitionSize?: number;
   biosBootPartitionSize?: number;
   rootPartition?: FileInImage;
@@ -233,6 +240,7 @@ export interface ABPartitionsDiskOptions {
 export const abpartitionsDisk = async ({
   bootType = "both",
   linuxDiskDevice,
+  grubDiskDevice,
   efiPartitionSize,
   biosBootPartitionSize,
   rootPartition,
@@ -290,6 +298,7 @@ export const abpartitionsDisk = async ({
     ? await abpartitionsBiosPartition({
         grubSourceImage,
         grubPartitionIndex,
+        grubDiskDevice,
         containerCache,
         apkCache,
         logger,
@@ -312,6 +321,7 @@ export const abpartitionsDisk = async ({
       file: await abpartitionsEfiPartition({
         grubSourceImage,
         grubPartitionIndex,
+        grubDiskDevice,
         mtoolsSource,
         apkCache,
         containerCache,
@@ -326,6 +336,7 @@ export const abpartitionsDisk = async ({
     type: PartitionType.LinuxData,
     file: await abpartitionsGrubPartition({
       linuxDiskDevice,
+      grubDiskDevice,
       grubSourceImage,
       grubSourcePath,
       grubEnvPartitionIndex,
