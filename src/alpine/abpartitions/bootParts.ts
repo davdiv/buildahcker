@@ -18,17 +18,17 @@ import { prepareApkPackages } from "../prepareApkPackages";
 const minEFIPartitionSize = 33 * 1024 * 1024;
 
 export interface ABPartitionsGrubPartitionOptions {
-  linuxDiskDevice?: string;
-  grubTimeout?: number;
-  grubExtraConfig?: string;
   grubDiskDevice?: string;
-  grubSourceImage: string;
-  grubSourcePath?: string;
   grubEnvPartitionIndex: number;
   grubEnvPath?: string;
-  rootPartitionGrubCfg?: string;
+  grubExtraConfig?: string;
+  grubSourceImage: string;
+  grubSourcePath?: string;
+  grubTimeout?: number;
+  linuxDiskDevice?: string;
   rootPartitionAIndex: number;
   rootPartitionBIndex: number;
+  rootPartitionGrubCfg?: string;
   squashfsToolsSource?: ImageOrContainer;
   apkCache?: string;
   containerCache?: ContainerCache;
@@ -36,17 +36,17 @@ export interface ABPartitionsGrubPartitionOptions {
 }
 
 export const abpartitionsGrubPartition = async ({
-  grubTimeout = 3,
-  grubExtraConfig = "",
-  linuxDiskDevice = "/dev/sda",
   grubDiskDevice = "hd0",
-  grubSourceImage,
-  grubSourcePath = "/usr/lib/grub",
-  rootPartitionGrubCfg = "/boot/grub.cfg",
   grubEnvPartitionIndex,
   grubEnvPath = "/grubenv",
+  grubExtraConfig = "",
+  grubSourceImage,
+  grubSourcePath = "/usr/lib/grub",
+  grubTimeout = 3,
+  linuxDiskDevice = "/dev/sda",
   rootPartitionAIndex,
   rootPartitionBIndex,
+  rootPartitionGrubCfg = "/boot/grub.cfg",
   squashfsToolsSource,
   apkCache,
   containerCache,
@@ -131,26 +131,26 @@ export const abpartitionsGrubEnvPartition = async ({
 };
 
 export interface ABPartitionsGrubenvAndEfiPartitionOptions {
-  grubSourceImage: string;
-  grubPartitionIndex: number;
   efiPartitionSize: number;
-  grubEnvPath?: string;
-  useEfi?: boolean;
   grubDiskDevice?: string;
+  grubEnvPath?: string;
+  grubPartitionIndex: number;
+  grubSourceImage: string;
   mtoolsSource?: ImageOrContainer;
+  useEfi?: boolean;
   containerCache?: ContainerCache;
   apkCache?: string;
   logger?: Writable;
 }
 
 export const abpartitionsGrubenvAndEfiPartition = async ({
-  grubSourceImage,
-  grubPartitionIndex,
-  grubDiskDevice = "hd0",
-  useEfi,
-  grubEnvPath = "/grubenv",
   efiPartitionSize,
+  grubDiskDevice = "hd0",
+  grubEnvPath = "/grubenv",
+  grubPartitionIndex,
+  grubSourceImage,
   mtoolsSource,
+  useEfi,
   containerCache,
   apkCache,
   logger,
@@ -201,18 +201,18 @@ export const abpartitionsGrubenvAndEfiPartition = async ({
 };
 
 export interface ABPartitionsBiosPartitionOptions {
-  grubSourceImage: string;
-  grubPartitionIndex: number;
   grubDiskDevice?: string;
+  grubPartitionIndex: number;
+  grubSourceImage: string;
   containerCache?: ContainerCache;
   apkCache?: string;
   logger?: Writable;
 }
 
 export const abpartitionsBiosPartition = async ({
-  grubSourceImage,
-  grubPartitionIndex,
   grubDiskDevice = "hd0",
+  grubPartitionIndex,
+  grubSourceImage,
   containerCache,
   apkCache,
   logger,
@@ -244,21 +244,21 @@ export const abpartitionsBiosPartition = async ({
 };
 
 export interface ABPartitionsDiskOptions {
-  bootType?: "bios" | "efi" | "both";
-  grubTimeout?: number;
-  grubExtraConfig?: string;
-  linuxDiskDevice?: string;
-  grubDiskDevice?: string;
-  efiPartitionSize?: number;
   biosBootPartitionSize?: number;
-  rootPartition?: FileInImage;
-  rootPartitionSize: number;
-  rootPartitionGrubCfg?: string;
+  bootType?: "bios" | "efi" | "both";
+  efiPartitionSize?: number;
+  grubDiskDevice?: string;
   grubEnvPath?: string;
+  grubExtraConfig?: string;
   grubSourceImage?: string;
   grubSourcePath?: string;
-  partedSource?: ImageOrContainer;
+  grubTimeout?: number;
+  linuxDiskDevice?: string;
   mtoolsSource?: ImageOrContainer;
+  partedSource?: ImageOrContainer;
+  rootPartition?: FileInImage;
+  rootPartitionGrubCfg?: string;
+  rootPartitionSize: number;
   squashfsToolsSource?: ImageOrContainer;
   apkCache?: string;
   containerCache?: ContainerCache;
@@ -266,21 +266,21 @@ export interface ABPartitionsDiskOptions {
 }
 
 export const abpartitionsDisk = async ({
-  bootType = "both",
-  grubTimeout,
-  linuxDiskDevice,
-  grubExtraConfig,
-  grubDiskDevice,
-  efiPartitionSize,
   biosBootPartitionSize,
-  rootPartition,
-  rootPartitionSize,
-  rootPartitionGrubCfg,
+  bootType = "both",
+  efiPartitionSize,
+  grubDiskDevice,
   grubEnvPath,
+  grubExtraConfig,
   grubSourceImage,
   grubSourcePath,
-  partedSource,
+  grubTimeout,
+  linuxDiskDevice,
   mtoolsSource,
+  partedSource,
+  rootPartition,
+  rootPartitionGrubCfg,
+  rootPartitionSize,
   squashfsToolsSource,
   apkCache,
   containerCache,
@@ -317,11 +317,11 @@ export const abpartitionsDisk = async ({
 
   const biosBoot = useBios
     ? await abpartitionsBiosPartition({
-        grubSourceImage,
-        grubPartitionIndex,
         grubDiskDevice,
-        containerCache,
+        grubPartitionIndex,
+        grubSourceImage,
         apkCache,
+        containerCache,
         logger,
       })
     : undefined;
@@ -340,15 +340,15 @@ export const abpartitionsDisk = async ({
     name: useEfi ? "efi" : "grubenv",
     type: useEfi ? PartitionType.EfiSystem : PartitionType.LinuxData,
     file: await abpartitionsGrubenvAndEfiPartition({
-      useEfi,
-      grubSourceImage,
+      efiPartitionSize,
+      grubDiskDevice,
       grubEnvPath,
       grubPartitionIndex,
-      grubDiskDevice,
+      grubSourceImage,
       mtoolsSource,
+      useEfi,
       apkCache,
       containerCache,
-      efiPartitionSize,
       logger,
     }),
   };
@@ -357,13 +357,13 @@ export const abpartitionsDisk = async ({
     name: "grub",
     type: PartitionType.LinuxData,
     file: await abpartitionsGrubPartition({
-      linuxDiskDevice,
-      grubTimeout,
       grubDiskDevice,
-      grubSourceImage,
-      grubExtraConfig,
-      grubSourcePath,
       grubEnvPartitionIndex: grubenvAndEfiPartitionIndex,
+      grubExtraConfig,
+      grubSourceImage,
+      grubSourcePath,
+      grubTimeout,
+      linuxDiskDevice,
       rootPartitionAIndex,
       rootPartitionBIndex,
       rootPartitionGrubCfg,

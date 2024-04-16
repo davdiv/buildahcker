@@ -7,26 +7,26 @@ import { MemFile, addFiles } from "../../steps";
 import { mksquashfsStep } from "../mksquashfs";
 
 export interface ABPartitionsRootPartitionOptions {
-  sourceRootImage: string;
-  sourceRootKernelPath?: string;
   kernelCmdline?: string;
   rootPartitionGrubCfg?: string;
-  updateToolPath?: string;
+  sourceRootImage: string;
   sourceRootInitrdPath?: string;
+  sourceRootKernelPath?: string;
   squashfsToolsSource?: ImageOrContainer;
+  updateToolPath?: string;
   apkCache?: string;
   containerCache?: ContainerCache;
   logger?: Writable;
 }
 
 export const abpartitionsRootPartition = async ({
-  sourceRootImage,
-  sourceRootKernelPath = "/boot/vmlinuz-lts",
   kernelCmdline,
-  sourceRootInitrdPath = "/boot/initramfs-lts",
   rootPartitionGrubCfg = "/boot/grub.cfg",
-  updateToolPath = "/sbin/buildahckerABTool",
+  sourceRootImage,
+  sourceRootInitrdPath = "/boot/initramfs-lts",
+  sourceRootKernelPath = "/boot/vmlinuz-lts",
   squashfsToolsSource,
+  updateToolPath = "/sbin/buildahckerABTool",
   apkCache,
   containerCache,
   logger,
