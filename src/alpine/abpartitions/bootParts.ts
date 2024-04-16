@@ -1,3 +1,5 @@
+import { createHash } from "crypto";
+import { stat } from "fs/promises";
 import { join } from "path";
 import type { Writable } from "stream";
 import type { AtomicStep, ImageOrContainer } from "../../container";
@@ -6,14 +8,12 @@ import type { FileInImage } from "../../fileInImage";
 import { useFilesInImages } from "../../fileInImage";
 import { ImageBuilder } from "../../imageBuilder";
 import { MemFile, addFiles, run } from "../../steps";
-import { grubBiosSetup, grubMkimageStep } from "../grub";
+import { grubBiosSetup, grubMkenvStep, grubMkimageStep } from "../grub";
 import { mksquashfsStep } from "../mksquashfs";
 import { mkvfatfsStep } from "../mkvfatfs";
 import type { Partition, PartitionConfig } from "../partitions";
 import { PartitionType, parted, writePartitions } from "../partitions";
 import { prepareApkPackages } from "../prepareApkPackages";
-import { createHash } from "crypto";
-import { stat } from "fs/promises";
 
 const minEFIPartitionSize = 33 * 1024 * 1024;
 
@@ -23,6 +23,8 @@ export interface ABPartitionsGrubPartitionOptions {
   grubSourceImage: string;
   grubSourcePath?: string;
   grubEnvPartitionIndex: number;
+  grubEnvPath?: string;
+  rootPartitionGrubCfg?: string;
   rootPartitionAIndex: number;
   rootPartitionBIndex: number;
   squashfsToolsSource?: ImageOrContainer;
@@ -36,7 +38,9 @@ export const abpartitionsGrubPartition = async ({
   grubDiskDevice = "hd0",
   grubSourceImage,
   grubSourcePath = "/usr/lib/grub",
+  rootPartitionGrubCfg = "/boot/grub.cfg",
   grubEnvPartitionIndex,
+  grubEnvPath = "/grubenv",
   rootPartitionAIndex,
   rootPartitionBIndex,
   squashfsToolsSource,
@@ -53,7 +57,7 @@ export const abpartitionsGrubPartition = async ({
       [join(grubSourcePath, "grub.cfg")]: new MemFile({
         content: `
 insmod all_video
-set envfile=(${grubDiskDevice},gpt${grubEnvPartitionIndex})+1024
+set envfile=(${grubDiskDevice},gpt${grubEnvPartitionIndex})/${grubEnvPath}
 load_env --file $envfile buildahcker_stable buildahcker_new
 if [ ( $buildahcker_new == b ) -o ( buildahcker_stable == b ) ] ; then
   set default=b
@@ -62,24 +66,21 @@ else
   set default=a
   set fallback=b
 fi
-if [ buildahcker_new != n ] ; then
+if [ $buildahcker_new != n ] ; then
   set buildahcker_new=n
   save_env --file $envfile buildahcker_stable buildahcker_new
-fi
-if [ ( $buildahcker_stable != a ) -a ( $buildahcker_stable != b ) ] ; then
-  set buildahcker_stable=n
 fi
 export buildahcker_params
 timeout=3
 menuentry A --id=a {
   set root=(${grubDiskDevice},gpt${rootPartitionAIndex})
-  set buildahcker_params="buildahcker_current=a buildahcker_stable=$buildahcker_stable buildahcker_other_root=${linuxDiskDevice}${rootPartitionBIndex} root=${linuxDiskDevice}${rootPartitionAIndex}"
-  configfile /boot/grub.cfg
+  set buildahcker_params="buildahcker_current=a buildahcker_grubenv_device=${linuxDiskDevice}${grubEnvPartitionIndex} buildahcker_grubenv=${grubEnvPath} buildahcker_other_root=${linuxDiskDevice}${rootPartitionBIndex} root=${linuxDiskDevice}${rootPartitionAIndex}"
+  configfile ${rootPartitionGrubCfg}
 }
 menuentry B --id=b {
   set root=(${grubDiskDevice},gpt${rootPartitionBIndex})
-  set buildahcker_params="buildahcker_current=b buildahcker_stable=$buildahcker_stable buildahcker_other_root=${linuxDiskDevice}${rootPartitionAIndex} root=${linuxDiskDevice}${rootPartitionBIndex}"
-  configfile /boot/grub.cfg
+  set buildahcker_params="buildahcker_current=b buildahcker_grubenv_device=${linuxDiskDevice}${grubEnvPartitionIndex} buildahcker_grubenv=${grubEnvPath} buildahcker_other_root=${linuxDiskDevice}${rootPartitionAIndex} root=${linuxDiskDevice}${rootPartitionBIndex}"
+  configfile ${rootPartitionGrubCfg}
 }
 `,
       }),
@@ -124,10 +125,12 @@ export const abpartitionsGrubEnvPartition = async ({
   return { imageId: grubEnvBuilder.imageId, file: "buildahcker.img" };
 };
 
-export interface ABPartitionsEfiPartitionOptions {
+export interface ABPartitionsGrubenvAndEfiPartitionOptions {
   grubSourceImage: string;
   grubPartitionIndex: number;
   efiPartitionSize: number;
+  grubEnvPath?: string;
+  useEfi?: boolean;
   grubDiskDevice?: string;
   mtoolsSource?: ImageOrContainer;
   containerCache?: ContainerCache;
@@ -135,16 +138,18 @@ export interface ABPartitionsEfiPartitionOptions {
   logger?: Writable;
 }
 
-export const abpartitionsEfiPartition = async ({
+export const abpartitionsGrubenvAndEfiPartition = async ({
   grubSourceImage,
   grubPartitionIndex,
   grubDiskDevice = "hd0",
+  useEfi,
+  grubEnvPath = "/grubenv",
   efiPartitionSize,
   mtoolsSource,
   containerCache,
   apkCache,
   logger,
-}: ABPartitionsEfiPartitionOptions): Promise<FileInImage> => {
+}: ABPartitionsGrubenvAndEfiPartitionOptions): Promise<FileInImage> => {
   const builder = await ImageBuilder.from(
     "scratch", // TODO: allow passing this as a parameter?
     {
@@ -153,16 +158,30 @@ export const abpartitionsEfiPartition = async ({
     },
   );
   await builder.executeStep([
-    grubMkimageStep({
-      outputCoreFile: "efi/EFI/boot/bootx64.efi",
+    grubMkenvStep({
       grubSource: grubSourceImage,
-      target: "x86_64-efi",
-      modules: ["part_gpt", "squash4"],
-      prefix: `(${grubDiskDevice},gpt${grubPartitionIndex})/`,
+      outputFile: join("efi", grubEnvPath),
+      variables: ["buildahcker_stable=a", "buildahcker_new=n"],
       containerCache,
       apkCache,
       logger,
     }),
+  ]);
+  if (useEfi) {
+    await builder.executeStep(
+      grubMkimageStep({
+        outputCoreFile: "efi/EFI/boot/bootx64.efi",
+        grubSource: grubSourceImage,
+        target: "x86_64-efi",
+        modules: ["part_gpt", "squash4"],
+        prefix: `(${grubDiskDevice},gpt${grubPartitionIndex})/`,
+        containerCache,
+        apkCache,
+        logger,
+      }),
+    );
+  }
+  await builder.executeStep(
     mkvfatfsStep({
       inputFolder: "efi",
       outputFile: "/buildahcker.img",
@@ -172,7 +191,7 @@ export const abpartitionsEfiPartition = async ({
       containerCache,
       logger,
     }),
-  ]);
+  );
   return { imageId: builder.imageId, file: "buildahcker.img" };
 };
 
@@ -227,6 +246,8 @@ export interface ABPartitionsDiskOptions {
   biosBootPartitionSize?: number;
   rootPartition?: FileInImage;
   rootPartitionSize: number;
+  rootPartitionGrubCfg?: string;
+  grubEnvPath?: string;
   grubSourceImage?: string;
   grubSourcePath?: string;
   partedSource?: ImageOrContainer;
@@ -245,6 +266,8 @@ export const abpartitionsDisk = async ({
   biosBootPartitionSize,
   rootPartition,
   rootPartitionSize,
+  rootPartitionGrubCfg,
+  grubEnvPath,
   grubSourceImage,
   grubSourcePath,
   partedSource,
@@ -278,21 +301,10 @@ export const abpartitionsDisk = async ({
 
   let curPartitionIndex = 0;
   const biosDataPartitionIndex = useBios ? ++curPartitionIndex : -1;
-  const efiPartitionIndex = useEfi ? ++curPartitionIndex : -1;
-  const grubEnvPartitionIndex = ++curPartitionIndex;
+  const grubenvAndEfiPartitionIndex = ++curPartitionIndex;
   const grubPartitionIndex = ++curPartitionIndex;
   const rootPartitionAIndex = ++curPartitionIndex;
   const rootPartitionBIndex = ++curPartitionIndex;
-
-  partitionsMap[grubEnvPartitionIndex] = {
-    type: PartitionType.LinuxData,
-    name: "grubenv",
-    file: await abpartitionsGrubEnvPartition({
-      grubSourceImage,
-      containerCache,
-      logger,
-    }),
-  };
 
   const biosBoot = useBios
     ? await abpartitionsBiosPartition({
@@ -313,23 +325,24 @@ export const abpartitionsDisk = async ({
       file: biosBoot.core,
     };
   }
-  if (useEfi) {
-    efiPartitionSize = Math.max(minEFIPartitionSize, efiPartitionSize ?? 0);
-    partitionsMap[efiPartitionIndex] = {
-      name: "efi",
-      type: PartitionType.EfiSystem,
-      file: await abpartitionsEfiPartition({
-        grubSourceImage,
-        grubPartitionIndex,
-        grubDiskDevice,
-        mtoolsSource,
-        apkCache,
-        containerCache,
-        efiPartitionSize,
-        logger,
-      }),
-    };
-  }
+
+  efiPartitionSize = Math.max(minEFIPartitionSize, efiPartitionSize ?? 0);
+  partitionsMap[grubenvAndEfiPartitionIndex] = {
+    name: useEfi ? "efi" : "grubenv",
+    type: useEfi ? PartitionType.EfiSystem : PartitionType.LinuxData,
+    file: await abpartitionsGrubenvAndEfiPartition({
+      useEfi,
+      grubSourceImage,
+      grubEnvPath,
+      grubPartitionIndex,
+      grubDiskDevice,
+      mtoolsSource,
+      apkCache,
+      containerCache,
+      efiPartitionSize,
+      logger,
+    }),
+  };
 
   partitionsMap[grubPartitionIndex] = {
     name: "grub",
@@ -339,9 +352,10 @@ export const abpartitionsDisk = async ({
       grubDiskDevice,
       grubSourceImage,
       grubSourcePath,
-      grubEnvPartitionIndex,
+      grubEnvPartitionIndex: grubenvAndEfiPartitionIndex,
       rootPartitionAIndex,
       rootPartitionBIndex,
+      rootPartitionGrubCfg,
       squashfsToolsSource,
       apkCache,
       containerCache,
