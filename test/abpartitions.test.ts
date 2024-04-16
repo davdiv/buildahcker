@@ -30,7 +30,7 @@ it(
       addFiles({
         "etc/mkinitfs": new MemDirectory(),
         "etc/mkinitfs/mkinitfs.conf": new MemFile({
-          content: `features="base ata scsi squashfs"\n`,
+          content: `features="base virtio squashfs"\n`,
         }),
         init: new MemFile({
           content:
@@ -48,6 +48,7 @@ it(
       logger,
     });
     const diskImage = await abpartitionsDisk({
+      linuxDiskDevice: "/dev/vda",
       rootPartitionSize: 500 * 1024 * 1024,
       rootPartition,
       apkCache,
@@ -63,7 +64,7 @@ it(
           "-m",
           "1G",
           "-drive",
-          "format=raw,file=/disk.img",
+          "format=raw,file=/disk.img,if=virtio",
           "-nographic",
         ],
         buildahRunOptions: ["-v", `${await getFile(diskImage)}:/disk.img`],
@@ -83,7 +84,7 @@ it(
           "-bios",
           "/usr/share/ovmf/bios.bin",
           "-drive",
-          "format=raw,file=/disk.img",
+          "format=raw,file=/disk.img,if=virtio",
           "-nographic",
         ],
         buildahRunOptions: ["-v", `${await getFile(diskImage)}:/disk.img`],

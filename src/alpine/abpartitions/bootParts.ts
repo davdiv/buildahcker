@@ -18,6 +18,7 @@ import { stat } from "fs/promises";
 const minEFIPartitionSize = 33 * 1024 * 1024;
 
 export interface ABPartitionsGrubPartitionOptions {
+  linuxDiskDevice?: string;
   grubSourceImage: string;
   grubSourcePath?: string;
   grubEnvPartitionIndex: number;
@@ -30,6 +31,7 @@ export interface ABPartitionsGrubPartitionOptions {
 }
 
 export const abpartitionsGrubPartition = async ({
+  linuxDiskDevice = "/dev/sda",
   grubSourceImage,
   grubSourcePath = "/usr/lib/grub",
   grubEnvPartitionIndex,
@@ -69,12 +71,12 @@ export buildahcker_params
 timeout=3
 menuentry A --id=a {
   set root=(hd0,gpt${rootPartitionAIndex})
-  set buildahcker_params="buildahcker_current=a buildahcker_stable=$buildahcker_stable root=/dev/sda${rootPartitionAIndex}"
+  set buildahcker_params="buildahcker_current=a buildahcker_stable=$buildahcker_stable buildahcker_other_root=${linuxDiskDevice}${rootPartitionBIndex} root=${linuxDiskDevice}${rootPartitionAIndex}"
   configfile /boot/grub.cfg
 }
 menuentry B --id=b {
   set root=(hd0,gpt${rootPartitionBIndex})
-  set buildahcker_params="buildahcker_current=b buildahcker_stable=$buildahcker_stable root=/dev/sda${rootPartitionBIndex}"
+  set buildahcker_params="buildahcker_current=b buildahcker_stable=$buildahcker_stable buildahcker_other_root=${linuxDiskDevice}${rootPartitionAIndex} root=${linuxDiskDevice}${rootPartitionBIndex}"
   configfile /boot/grub.cfg
 }
 `,
@@ -213,6 +215,7 @@ export const abpartitionsBiosPartition = async ({
 
 export interface ABPartitionsDiskOptions {
   bootType?: "bios" | "efi" | "both";
+  linuxDiskDevice?: string;
   efiPartitionSize?: number;
   biosBootPartitionSize?: number;
   rootPartition?: FileInImage;
@@ -229,6 +232,7 @@ export interface ABPartitionsDiskOptions {
 
 export const abpartitionsDisk = async ({
   bootType = "both",
+  linuxDiskDevice,
   efiPartitionSize,
   biosBootPartitionSize,
   rootPartition,
@@ -321,6 +325,7 @@ export const abpartitionsDisk = async ({
     name: "grub",
     type: PartitionType.LinuxData,
     file: await abpartitionsGrubPartition({
+      linuxDiskDevice,
       grubSourceImage,
       grubSourcePath,
       grubEnvPartitionIndex,
