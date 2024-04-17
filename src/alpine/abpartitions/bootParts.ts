@@ -63,7 +63,7 @@ export const abpartitionsGrubPartition = async ({
 insmod all_video
 set envfile=(${grubDiskDevice},gpt${grubEnvPartitionIndex})/${grubEnvPath}
 load_env --file $envfile buildahcker_stable buildahcker_new
-if [ ( $buildahcker_new == b ) -o ( $buildahcker_stable == b ) ] ; then
+if [ ( $buildahcker_new == b ) -o ( ( $buildahcker_new != a ) -a ( $buildahcker_stable == b ) ) ] ; then
   set default=b
   set fallback=a
 else
