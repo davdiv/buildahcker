@@ -7,7 +7,7 @@ import {
   parted,
   writePartitions,
 } from "../src/alpine/partitions";
-import { apkCache, containerCache, logger, tempFolder } from "./testUtils";
+import { logger, tempFolder } from "./testUtils";
 
 it(
   "parted and writePartitions should succeed",
@@ -30,9 +30,6 @@ it(
           type: PartitionType.LinuxData,
         },
       ],
-      apkCache,
-      containerCache,
-      logger,
     });
     await writePartitions({
       outputFile,

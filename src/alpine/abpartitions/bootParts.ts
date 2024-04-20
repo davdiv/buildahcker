@@ -255,7 +255,6 @@ export interface ABPartitionsDiskOptions {
   grubTimeout?: number;
   linuxDiskDevice?: string;
   mtoolsSource?: ImageOrContainer;
-  partedSource?: ImageOrContainer;
   rootPartition?: FileInImage;
   rootPartitionGrubCfg?: string;
   rootPartitionSize: number;
@@ -277,7 +276,6 @@ export const abpartitionsDisk = async ({
   grubTimeout,
   linuxDiskDevice,
   mtoolsSource,
-  partedSource,
   rootPartition,
   rootPartitionGrubCfg,
   rootPartitionSize,
@@ -406,10 +404,6 @@ export const abpartitionsDisk = async ({
       const partedRes = await parted({
         partitions,
         outputFile,
-        partedSource,
-        apkCache,
-        containerCache,
-        logger,
       });
       const partitionsToWrite: PartitionConfig[] = [];
       for (let i = 1; i <= curPartitionIndex; i++) {

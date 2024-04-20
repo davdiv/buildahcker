@@ -69,9 +69,6 @@ it("grub bios installation should succeed", { timeout: 120000 }, async () => {
         type: PartitionType.LinuxData,
       },
     ],
-    apkCache,
-    containerCache,
-    logger,
   });
   await grubBiosSetup({
     imageFile: diskImage,
@@ -169,9 +166,6 @@ it("grub efi installation should succeed", { timeout: 120000 }, async () => {
         type: PartitionType.LinuxData,
       },
     ],
-    apkCache,
-    containerCache,
-    logger,
   });
   await writePartitions({
     outputFile: diskImage,
