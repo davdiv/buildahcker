@@ -56,7 +56,7 @@ export const resolveInContainer = async (
         parts.splice(i, 1, ...linkTargetParts);
         i--;
       }
-    } catch (error) {}
+    } catch {}
   }
   return join(containerPath, ...parts);
 };

@@ -48,4 +48,4 @@ const createImage = async () => {
 createImage();
 ```
 
-Check the [tests](./test) and [this sample repository](https://github.com/davdiv/buildahcker-alpine-sample) for more usage examples.
+Check the [tests](https://github.com/davdiv/buildahcker/tree/main/test) and [this sample repository](https://github.com/davdiv/buildahcker-alpine-sample) for more usage examples.
