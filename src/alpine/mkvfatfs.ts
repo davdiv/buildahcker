@@ -1,11 +1,11 @@
 import { createHash } from "crypto";
 import { readdir, truncate } from "fs/promises";
 import type { Writable } from "stream";
-import type { AtomicStep, ImageOrContainer } from "../../container";
-import { withImageOrContainer } from "../../container";
-import type { ContainerCache } from "../../containerCache";
-import { prepareOutputFile } from "../../fileUtils";
-import { prepareApkPackages } from "../prepareApkPackages";
+import type { AtomicStep, ImageOrContainer } from "../container";
+import { withImageOrContainer } from "../container";
+import type { ContainerCache } from "../containerCache";
+import { prepareOutputFile } from "../fileUtils";
+import { prepareApkPackages } from "./prepareApkPackages";
 
 export interface MkvfatfsOptions {
   inputFolder: string;

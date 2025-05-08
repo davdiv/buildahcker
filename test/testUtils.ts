@@ -6,6 +6,7 @@ import { FSContainerCache, WritableBuffer, temporaryContainer } from "../src";
 
 export let tempFolder: string;
 export let apkCache: string;
+export let pacmanCache: string;
 export let containerCache: ContainerCache;
 beforeEach(async () => {
   const tempRootFolder = join(__dirname, "..", "temp");
@@ -13,6 +14,7 @@ beforeEach(async () => {
   const folder = await mkdtemp(join(tempRootFolder, "buildahcker-test-"));
   tempFolder = folder;
   apkCache = join(folder, "apk");
+  pacmanCache = join(folder, "pacman");
   containerCache = new FSContainerCache(join(folder, "container"));
 
   return async () => {

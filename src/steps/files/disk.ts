@@ -1,5 +1,5 @@
 import { lstat, readFile, readdir, readlink } from "fs/promises";
-import { join } from "path";
+import { join, resolve } from "path";
 import type {
   BaseFile,
   DirectoryContent,
@@ -23,6 +23,7 @@ export class DiskLocation extends ProxyFile {
     public options?: DiskLocationOptions,
   ) {
     super();
+    this.sourceFilePath = resolve(sourceFilePath);
   }
 
   protected override async _getFile(): Promise<BaseFile> {
@@ -52,7 +53,7 @@ export class DiskDirectory extends BaseDirectory {
     public options?: DiskLocationOptions,
   ) {
     super(attributes);
-    this.sourceFilePath = sourceFilePath;
+    this.sourceFilePath = resolve(sourceFilePath);
   }
   protected override async _getDirectoryContent(): Promise<DirectoryContent> {
     const sourceFilePath = this.sourceFilePath;
@@ -71,7 +72,7 @@ export class DiskFile extends BaseRegularFile {
     attributes: Partial<FileAttributes>,
   ) {
     super(attributes);
-    this.sourceFilePath = sourceFilePath;
+    this.sourceFilePath = resolve(sourceFilePath);
   }
   protected override async _getContent(): Promise<Buffer> {
     return await readFile(this.sourceFilePath);
@@ -84,7 +85,7 @@ export class DiskSymLink extends BaseSymbolicLink {
     attributes: Partial<SymbolicLinkAttributes>,
   ) {
     super(attributes);
-    this.sourceFilePath = sourceFilePath;
+    this.sourceFilePath = resolve(sourceFilePath);
   }
   protected override async _getContent(): Promise<string> {
     return await readlink(this.sourceFilePath);

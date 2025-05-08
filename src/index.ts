@@ -6,3 +6,4 @@ export * from "./inspect";
 export * from "./steps";
 export * from "./alpine";
 export * from "./fileInImage";
+export * from "./archlinux";

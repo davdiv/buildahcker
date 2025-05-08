@@ -1,22 +1,10 @@
 import { createHash } from "crypto";
-import { readdir, rm, rmdir } from "fs/promises";
+import { rm } from "fs/promises";
 import type { Writable } from "stream";
 import type { AtomicStep } from "../container";
+import { removeIfEmpty } from "../fileUtils";
 import { rmFiles } from "../steps/files/step";
 import { readApkInstalledDatabase } from "./apkInstalledDatabase";
-
-const removeIfEmpty = async (directory: string) => {
-  try {
-    const content = await readdir(directory);
-    if (content.length === 0) {
-      await rmdir(directory);
-    }
-  } catch (e: any) {
-    if (e.code !== "ENOENT") {
-      throw e;
-    }
-  }
-};
 
 export const apkManuallyRemove = (packages: string[], logger?: Writable) => {
   packages = packages.sort();
