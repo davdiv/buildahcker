@@ -1,4 +1,4 @@
-import crc32 from "crc/crc32";
+import { buf as crc32 } from "crc-32/crc32";
 import { randomUUID } from "crypto";
 import { truncate } from "fs/promises";
 import { prepareOutputFile } from "../../fileUtils";
@@ -93,8 +93,8 @@ export const parted = async (config: PartedOptions) => {
   partitionTableHeader.writeBigUInt64LE(BigInt(partitionsEntriesAddress), 0x48);
   partitionTableHeader.writeUInt32LE(maxPartitions, 0x50);
   partitionTableHeader.writeUInt32LE(partitionEntrySize, 0x54);
-  partitionTableHeader.writeUInt32LE(crc32(partitionsBuffer), 0x58);
-  partitionTableHeader.writeUint32LE(
+  partitionTableHeader.writeInt32LE(crc32(partitionsBuffer), 0x58);
+  partitionTableHeader.writeInt32LE(
     crc32(partitionTableHeader.subarray(0, 0x5c)),
     0x10,
   );
@@ -106,7 +106,7 @@ export const parted = async (config: PartedOptions) => {
     0x48,
   );
   altPartitionTableHeader.writeUint32LE(0, 0x10);
-  altPartitionTableHeader.writeUint32LE(
+  altPartitionTableHeader.writeInt32LE(
     crc32(altPartitionTableHeader.subarray(0, 0x5c)),
     0x10,
   );
