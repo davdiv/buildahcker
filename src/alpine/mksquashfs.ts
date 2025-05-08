@@ -1,14 +1,17 @@
 import { createHash } from "crypto";
-import type { Writable } from "stream";
-import type { AtomicStep, ImageOrContainer } from "../../container";
-import type { ContainerCache } from "../../containerCache";
-import { prepareOutputFile } from "../../fileUtils";
-import { prepareApkPackagesAndRun } from "../prepareApkPackages";
 import { relative, sep } from "path";
+import type { Writable } from "stream";
+import type { AtomicStep, ImageOrContainer } from "../container";
+import type { ContainerCache } from "../containerCache";
+import { prepareOutputFile } from "../fileUtils";
+import { prepareApkPackagesAndRun } from "./prepareApkPackages";
+import { veritySetup, type VeritySetupOptions } from "./dmverity/veritysetup";
 
 export interface MksquashfsOptions {
   inputFolder: string;
   outputFile: string;
+  timestamp?: string | number;
+  veritySetup?: Omit<VeritySetupOptions, "file">;
   squashfsToolsSource?: ImageOrContainer;
   containerCache?: ContainerCache;
   apkCache?: string;
@@ -19,12 +22,14 @@ export const mksquashfs = async ({
   inputFolder,
   squashfsToolsSource,
   outputFile,
+  timestamp = 0,
+  veritySetup: veritySetupOptions,
   containerCache,
   apkCache,
   logger,
 }: MksquashfsOptions) => {
   outputFile = await prepareOutputFile(outputFile);
-  const relativeOutputFile = relative(outputFile, inputFolder);
+  const relativeOutputFile = relative(inputFolder, outputFile);
   const extraOptions: string[] = [];
   if (!relativeOutputFile.startsWith(`..${sep}`)) {
     extraOptions.push("-e", relativeOutputFile);
@@ -38,6 +43,10 @@ export const mksquashfs = async ({
       "/out",
       "-noappend",
       "-no-xattrs",
+      "-mkfs-time",
+      `${timestamp}`,
+      "-all-time",
+      `${timestamp}`,
       ...extraOptions,
     ],
     buildahRunOptions: [
@@ -50,6 +59,12 @@ export const mksquashfs = async ({
     apkCache,
     logger,
   });
+  if (veritySetupOptions) {
+    await veritySetup({
+      file: outputFile,
+      ...veritySetupOptions,
+    });
+  }
 };
 
 // Note that paths in mksquashfsStep are inside the container
@@ -69,6 +84,13 @@ export const mksquashfsStep = ({
       JSON.stringify({
         inputFolder: inputFolderInContainer,
         outputFile: outputFileInContainer,
+        timestamp: otherOptions.timestamp ?? undefined,
+        veritySetup: otherOptions?.veritySetup
+          ? {
+              salt: otherOptions.veritySetup.salt ?? undefined,
+              uuid: otherOptions.veritySetup.uuid ?? undefined,
+            }
+          : undefined,
       }),
     );
     return `MKSQUASHFS-${hash.digest("base64url")}`;

@@ -6,6 +6,8 @@ import type {
 } from "./container";
 import { temporaryContainer } from "./container";
 import type { ContainerCache } from "./containerCache";
+import type { ExecOptions } from "./exec";
+import { exec } from "./exec";
 import { getFullImageID } from "./inspect";
 
 export interface ImageBuilderOptions extends ContainerOptions {
@@ -38,6 +40,10 @@ export class ImageBuilder implements StepExecutor {
 
   get imageId() {
     return this.#imageId;
+  }
+
+  async tag(name: string, options: ExecOptions = {}) {
+    await exec(["buildah", "tag", this.#imageId, name], options);
   }
 
   async #executeStepInOneContainer(step: Step, fromImageId?: string) {

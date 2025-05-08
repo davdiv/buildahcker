@@ -1,7 +1,20 @@
 import { close, open, read } from "fs";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, readdir, rmdir, writeFile } from "fs/promises";
 import { dirname, resolve } from "path";
 import { promisify } from "util";
+
+export const removeIfEmpty = async (directory: string) => {
+  try {
+    const content = await readdir(directory);
+    if (content.length === 0) {
+      await rmdir(directory);
+    }
+  } catch (e: any) {
+    if (e.code !== "ENOENT") {
+      throw e;
+    }
+  }
+};
 
 export const prepareOutputFile = async (outputFile: string) => {
   outputFile = resolve(outputFile);
