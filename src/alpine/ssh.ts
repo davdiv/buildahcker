@@ -1,5 +1,5 @@
 import { mkdir, stat } from "fs/promises";
-import { join } from "path";
+import { join, resolve } from "path";
 import type { Writable } from "stream";
 import type { ImageOrContainer } from "../container";
 import { withImageOrContainer } from "../container";
@@ -50,6 +50,7 @@ export const sshKeygen = async <
 > => {
   const files: Record<`${P}${T}${S}.pub` | `${P}${T}${S}`, DiskFile> =
     {} as any;
+  outputFolder = resolve(outputFolder);
   await mkdir(outputFolder, { recursive: true });
   let hasMissingTypes = false;
   const keyTypesInfo = await Promise.all(
