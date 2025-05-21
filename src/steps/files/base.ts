@@ -39,9 +39,9 @@ export type DirectoryContent = Record<string, CopyableFile>;
 const naturalSort = <T>(a: T, b: T) => (a < b ? -1 : a > b ? 1 : 0);
 const sortKeys = <T extends [string, any]>([a]: T, [b]: T) => naturalSort(a, b);
 
-export const normalizeDirectoryEntries = (
-  content: DirectoryContent,
-): Map<string, CopyableFile> => {
+export const normalizeDirectoryEntries = <T>(
+  content: Record<string, T>,
+): Map<string, T> => {
   return new Map(Object.entries(content).map(normalizeEntry).sort(sortKeys));
 };
 
