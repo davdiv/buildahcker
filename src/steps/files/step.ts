@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import { rm } from "fs/promises";
+import { mkdir, rm } from "fs/promises";
 import type { AtomicStep } from "../../container";
 import { resolveParentInContainer } from "../../resolveInContainer";
 import type { DirectoryContent } from "./base";
@@ -8,12 +8,15 @@ import {
   normalizeDirectoryEntries,
   normalizeRelativePath,
 } from "./base";
+import { dirname } from "path";
 
 export const addFiles = (files: DirectoryContent) => {
   const entries = normalizeDirectoryEntries(files);
   const step: AtomicStep = async (container) => {
     for (const [filePath, file] of entries) {
-      await file.writeTo(await container.resolve(filePath));
+      const destination = await container.resolve(filePath);
+      await mkdir(dirname(destination), { recursive: true });
+      await file.writeTo(destination);
     }
   };
   step.getCacheKey = async () => {
