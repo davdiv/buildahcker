@@ -5,6 +5,7 @@ export interface DracutOptions {
   outputFile: string;
   addModules?: string[];
   installFiles?: string[];
+  mount?: string[];
   extraOptions?: string[];
 }
 
@@ -12,11 +13,15 @@ export const dracut = ({
   outputFile,
   addModules,
   installFiles,
+  mount,
   extraOptions = [],
 }: DracutOptions) => {
   const command = ["dracut", outputFile, "--no-hostonly"];
   addModules?.forEach((module) => {
     command.push("--add", module);
+  });
+  mount?.forEach((m) => {
+    command.push("--mount", m);
   });
   installFiles?.forEach((file) => {
     command.push("--install", file);
