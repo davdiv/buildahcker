@@ -14,6 +14,7 @@ import { writeFile } from "fs/promises";
 export interface MkerofsOptions {
   inputFolder: string;
   outputFile: string;
+  excludeRegex?: string[];
   metadataFile?: string;
   veritySetup?: Omit<VeritySetupOptions, "file" | "metadataFile">;
   timestamp?: string | number;
@@ -27,6 +28,7 @@ export interface MkerofsOptions {
 export const mkerofs = async ({
   inputFolder,
   erofsUtilsSource,
+  excludeRegex,
   timestamp = 0,
   uuid = "hash",
   veritySetup: veritySetupOptions,
@@ -42,6 +44,7 @@ export const mkerofs = async ({
   if (!relativeOutputFile.startsWith(`..${sep}`)) {
     extraOptions.push(`--exclude-path=${relativeOutputFile}`);
   }
+  excludeRegex?.forEach((e) => extraOptions.push(`--exclude-regex=${e}`));
   if (uuid !== "random" && uuid !== "hash") {
     extraOptions.push("-U", uuid);
   }
@@ -107,6 +110,7 @@ export const mkerofsStep = ({
         inputFolder: inputFolderInContainer,
         outputFile: outputFileInContainer,
         metadataFile: metadataFileInContainer,
+        excludeRegex: otherOptions.excludeRegex ?? undefined,
         uuid: otherOptions.uuid ?? undefined,
         timestamp: otherOptions.timestamp ?? undefined,
         veritySetup: otherOptions.veritySetup
