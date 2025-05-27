@@ -1,25 +1,42 @@
 import { createHash } from "crypto";
-import { chmod, chown, stat } from "fs/promises";
+import { chmod, lchown, lstat, readdir } from "fs/promises";
 import type { AtomicStep } from "../../container";
 import type { FileAttributes } from "./base";
 import { normalizeDirectoryEntries } from "./base";
+import { join } from "path";
 
 export const setFileAttributes = (
-  files: Record<string, Partial<FileAttributes>>,
+  files: Record<
+    string,
+    Partial<FileAttributes & { recursive: boolean; dmode: number }>
+  >,
 ) => {
   const entries = normalizeDirectoryEntries(files);
   const step: AtomicStep = async (container) => {
-    for (const [filePath, { mode, uid, gid }] of entries) {
-      const destination = await container.resolve(filePath);
-      if (mode != null) {
-        await chmod(destination, mode);
-      }
-      if (uid != null || gid != null) {
-        await chown(
-          destination,
-          uid ?? (await stat(destination)).uid,
-          gid ?? (await stat(destination)).gid,
-        );
+    for (const [
+      filePath,
+      { recursive, mode, dmode = mode, uid, gid },
+    ] of entries) {
+      const files = [await container.resolve(filePath)];
+      while (files.length > 0) {
+        const destination = files.shift()!;
+        const statRes = await lstat(destination);
+        if (statRes.isDirectory()) {
+          if (dmode != null) {
+            await chmod(destination, dmode);
+          }
+          if (recursive) {
+            const content = await readdir(destination);
+            files.push(...content.map((file) => join(destination, file)));
+          }
+        }
+        const actualMode = statRes.isDirectory() ? dmode : mode;
+        if (actualMode != null) {
+          await chmod(destination, actualMode);
+        }
+        if (uid != null || gid != null) {
+          await lchown(destination, uid ?? statRes.uid, gid ?? statRes.gid);
+        }
       }
     }
   };
