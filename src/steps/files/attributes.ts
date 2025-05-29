@@ -31,7 +31,7 @@ export const setFileAttributes = (
           }
         }
         const actualMode = statRes.isDirectory() ? dmode : mode;
-        if (actualMode != null) {
+        if (actualMode != null && !statRes.isSymbolicLink()) {
           await chmod(destination, actualMode);
         }
         if (uid != null || gid != null) {
