@@ -15,6 +15,10 @@ export interface GrubMkImageOptions {
   prefix?: string;
   target?: string;
   config?: string;
+  pubkey?: string;
+  memdisk?: string;
+  disableCli?: boolean;
+  disableShimLock?: boolean;
   grubSource?: ImageOrContainer;
   containerCache?: ContainerCache;
   apkCache?: string;
@@ -27,6 +31,10 @@ export const grubMkimage = async ({
   modules,
   prefix,
   config,
+  pubkey,
+  memdisk,
+  disableCli,
+  disableShimLock,
   target,
   grubSource,
   containerCache,
@@ -55,11 +63,14 @@ export const grubMkimage = async ({
             "grub-mkimage",
             "-O",
             target ?? "x86_64-efi",
-            "-p",
-            prefix ?? "/boot/grub",
             "-o",
             "core.img",
             ...(config ? ["-c", "config.cfg"] : []),
+            ...(memdisk ? ["-m", "memdisk.img"] : []),
+            ...(pubkey ? ["-k", "pubkey.key"] : []),
+            ...(disableCli ? ["--disable-cli"] : []),
+            ...(disableShimLock ? ["--disable-shim-lock"] : []),
+            ...(prefix ? ["-p", prefix] : []),
             "--",
             ...(modules ?? []),
           ],
@@ -68,6 +79,15 @@ export const grubMkimage = async ({
             tempFolder.pathInContainer,
             "-v",
             `${outputCoreFile}:${tempFolder.pathInContainer}/core.img:rw`,
+            ...(memdisk
+              ? [
+                  "-v",
+                  `${memdisk}:${tempFolder.pathInContainer}/memdisk.img:ro`,
+                ]
+              : []),
+            ...(pubkey
+              ? ["-v", `${pubkey}:${tempFolder.pathInContainer}/pubkey.key:ro`]
+              : []),
           ],
         );
         if (outputBootFile) {
@@ -92,6 +112,10 @@ export const grubMkimageStep = ({
   modules,
   prefix,
   config,
+  memdisk: memdiskInContainer,
+  pubkey: pubkeyInContainer,
+  disableCli,
+  disableShimLock,
   target,
   ...otherOptions
 }: GrubMkImageOptions) => {
@@ -100,12 +124,22 @@ export const grubMkimageStep = ({
     const outputBootFile = outputBootFileInContainer
       ? await container.resolve(outputBootFileInContainer)
       : undefined;
+    const memdisk = memdiskInContainer
+      ? await container.resolve(memdiskInContainer)
+      : undefined;
+    const pubkey = pubkeyInContainer
+      ? await container.resolve(pubkeyInContainer)
+      : undefined;
     await grubMkimage({
       outputCoreFile,
       outputBootFile,
       modules,
       prefix,
       config,
+      memdisk,
+      pubkey,
+      disableCli,
+      disableShimLock,
       target,
       ...otherOptions,
     });
@@ -119,6 +153,10 @@ export const grubMkimageStep = ({
         modules,
         prefix,
         config,
+        memdisk: memdiskInContainer,
+        pubkey: pubkeyInContainer,
+        disableCli,
+        disableShimLock,
         target,
       }),
     );
