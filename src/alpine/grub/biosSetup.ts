@@ -1,5 +1,10 @@
-import { readFile } from "fs/promises";
-import { closeFile, openFile, readFromFile } from "../../fileUtils";
+import { readFile, writeFile } from "fs/promises";
+import {
+  closeFile,
+  openFile,
+  prepareOutputFile,
+  readFromFile,
+} from "../../fileUtils";
 import type { OffsetAndSize } from "../partitions";
 import { writePartitions } from "../partitions";
 
@@ -15,6 +20,19 @@ const BLOCK_SIZE = 12;
 const FIRST_BLOCK_OFFSET = GRUB_DISK_SECTOR_SIZE - BLOCK_SIZE;
 const SECOND_BLOCK_OFFSET = FIRST_BLOCK_OFFSET - BLOCK_SIZE;
 const GRUB_BOOT_I386_PC_KERNEL_SEG = 0x800;
+
+export interface GrubBiosSetupPrepareBootOptions {
+  bootFile?: string;
+  existingBootSectorFile?: string;
+  diskOffset: number;
+  outputBootFile: string;
+}
+
+export interface GrubBiosSetupPrepareCoreOptions {
+  coreFile?: string;
+  diskOffset: number;
+  outputCoreFile: string;
+}
 
 export interface GrubBiosSetupOptions {
   imageFile: string | number;
@@ -36,79 +54,95 @@ const writeBlockSegment = (
   segment: number,
 ) => memory.writeUint16LE(segment, blockListOffset + 10);
 
+const prepareCoreFile = (coreFile: Buffer, diskOffset: number) => {
+  const extraCoreFileLength = coreFile.length % GRUB_DISK_SECTOR_SIZE;
+  if (extraCoreFileLength !== 0) {
+    coreFile = Buffer.concat([
+      coreFile,
+      Buffer.alloc(GRUB_DISK_SECTOR_SIZE - extraCoreFileLength),
+    ]);
+  }
+
+  const firstSector = BigInt(diskOffset >> GRUB_DISK_SECTOR_BITS);
+
+  writeBlockStart(coreFile, FIRST_BLOCK_OFFSET, firstSector + 1n);
+  writeBlockLen(
+    coreFile,
+    FIRST_BLOCK_OFFSET,
+    (coreFile.length >> GRUB_DISK_SECTOR_BITS) - 1,
+  );
+  writeBlockSegment(
+    coreFile,
+    FIRST_BLOCK_OFFSET,
+    GRUB_BOOT_I386_PC_KERNEL_SEG + (GRUB_DISK_SECTOR_SIZE >> 4),
+  );
+  writeBlockStart(coreFile, SECOND_BLOCK_OFFSET, 0n);
+  writeBlockLen(coreFile, SECOND_BLOCK_OFFSET, 0);
+  writeBlockSegment(coreFile, SECOND_BLOCK_OFFSET, 0);
+
+  return coreFile;
+};
+
+const prepareBootFile = (
+  bootSector: Buffer,
+  diskOffset: number,
+  existingBootSector?: Buffer,
+) => {
+  if (bootSector.length !== GRUB_DISK_SECTOR_SIZE) {
+    throw new Error(
+      `The boot file should have a size of ${GRUB_DISK_SECTOR_SIZE} bytes.`,
+    );
+  }
+
+  // Copy the possible DOS BPB
+  existingBootSector?.copy(
+    bootSector,
+    GRUB_BOOT_MACHINE_BPB_START,
+    GRUB_BOOT_MACHINE_BPB_START,
+    GRUB_BOOT_MACHINE_BPB_END,
+  );
+
+  // Copy the partition table
+  existingBootSector?.copy(
+    bootSector,
+    GRUB_BOOT_MACHINE_PART_START,
+    GRUB_BOOT_MACHINE_PART_START,
+    GRUB_BOOT_MACHINE_PART_END,
+  );
+
+  const firstSector = BigInt(diskOffset >> GRUB_DISK_SECTOR_BITS);
+
+  // Write position of grub core in boot sector:
+  bootSector.writeBigUint64LE(firstSector, GRUB_BOOT_MACHINE_KERNEL_SECTOR);
+
+  // workaround for some buggy bios:
+  bootSector.writeUInt8(0x90, GRUB_BOOT_MACHINE_DRIVE_CHECK);
+  bootSector.writeUInt8(0x90, GRUB_BOOT_MACHINE_DRIVE_CHECK + 1);
+
+  return bootSector;
+};
+
 export const grubBiosSetup = async (options: GrubBiosSetupOptions) => {
   const imageFile = options.imageFile;
   const fd = await openFile(imageFile, "r+");
   try {
     const existingBootSector = await readFromFile(fd, 0, GRUB_DISK_SECTOR_SIZE);
     const bootSector = await readFile(options.bootFile);
-    let coreFile = await readFile(options.coreFile);
-
-    if (bootSector.length !== GRUB_DISK_SECTOR_SIZE) {
-      throw new Error(
-        `The boot file should have a size of ${GRUB_DISK_SECTOR_SIZE} bytes.`,
-      );
-    }
-
-    const extraCoreFileLength = coreFile.length % GRUB_DISK_SECTOR_SIZE;
-    if (extraCoreFileLength !== 0) {
-      coreFile = Buffer.concat([
-        coreFile,
-        Buffer.alloc(GRUB_DISK_SECTOR_SIZE - extraCoreFileLength),
-      ]);
-    }
-
-    // Copy the possible DOS BPB
-    existingBootSector.copy(
-      bootSector,
-      GRUB_BOOT_MACHINE_BPB_START,
-      GRUB_BOOT_MACHINE_BPB_START,
-      GRUB_BOOT_MACHINE_BPB_END,
-    );
-
-    // Copy the partition table
-    existingBootSector.copy(
-      bootSector,
-      GRUB_BOOT_MACHINE_PART_START,
-      GRUB_BOOT_MACHINE_PART_START,
-      GRUB_BOOT_MACHINE_PART_END,
-    );
-
-    const firstSector = BigInt(
-      options.partition.offset >> GRUB_DISK_SECTOR_BITS,
-    );
-
-    // Write position of grub core in boot sector:
-    bootSector.writeBigUint64LE(firstSector, GRUB_BOOT_MACHINE_KERNEL_SECTOR);
-
-    // workaround for some buggy bios:
-    bootSector.writeUInt8(0x90, GRUB_BOOT_MACHINE_DRIVE_CHECK);
-    bootSector.writeUInt8(0x90, GRUB_BOOT_MACHINE_DRIVE_CHECK + 1);
-
-    writeBlockStart(coreFile, FIRST_BLOCK_OFFSET, firstSector + 1n);
-    writeBlockLen(
-      coreFile,
-      FIRST_BLOCK_OFFSET,
-      (coreFile.length >> GRUB_DISK_SECTOR_BITS) - 1,
-    );
-    writeBlockSegment(
-      coreFile,
-      FIRST_BLOCK_OFFSET,
-      GRUB_BOOT_I386_PC_KERNEL_SEG + (GRUB_DISK_SECTOR_SIZE >> 4),
-    );
-    writeBlockStart(coreFile, SECOND_BLOCK_OFFSET, 0n);
-    writeBlockLen(coreFile, SECOND_BLOCK_OFFSET, 0);
-    writeBlockSegment(coreFile, SECOND_BLOCK_OFFSET, 0);
+    const coreFile = await readFile(options.coreFile);
 
     await writePartitions({
       outputFile: fd,
       partitions: [
         {
-          inputBuffer: bootSector,
+          inputBuffer: prepareBootFile(
+            bootSector,
+            options.partition.offset,
+            existingBootSector,
+          ),
           output: { offset: 0, size: GRUB_DISK_SECTOR_SIZE },
         },
         {
-          inputBuffer: coreFile,
+          inputBuffer: prepareCoreFile(coreFile, options.partition.offset),
           output: options.partition,
         },
       ],
@@ -116,4 +150,27 @@ export const grubBiosSetup = async (options: GrubBiosSetupOptions) => {
   } finally {
     await closeFile(fd, imageFile);
   }
+};
+
+export const grubBiosSetupPrepareBoot = async (
+  options: GrubBiosSetupPrepareBootOptions,
+) => {
+  const bootSector = await readFile(options.bootFile ?? options.outputBootFile);
+  const existingBootSector = options.existingBootSectorFile
+    ? await readFile(options.existingBootSectorFile)
+    : undefined;
+  await writeFile(
+    await prepareOutputFile(options.outputBootFile),
+    prepareBootFile(bootSector, options.diskOffset, existingBootSector),
+  );
+};
+
+export const grubBiosSetupPrepareCore = async (
+  options: GrubBiosSetupPrepareCoreOptions,
+) => {
+  const coreFile = await readFile(options.coreFile ?? options.outputCoreFile);
+  await writeFile(
+    await prepareOutputFile(options.outputCoreFile),
+    prepareCoreFile(coreFile, options.diskOffset),
+  );
 };

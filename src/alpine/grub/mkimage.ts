@@ -7,10 +7,15 @@ import type { ContainerCache } from "../../containerCache";
 import { prepareOutputFile } from "../../fileUtils";
 import { prepareApkPackages } from "../prepareApkPackages";
 import { createHash } from "crypto";
+import {
+  grubBiosSetupPrepareBoot,
+  grubBiosSetupPrepareCore,
+} from "./biosSetup";
 
 export interface GrubMkImageOptions {
   outputCoreFile: string;
   outputBootFile?: string;
+  biosSetupDiskOffset?: number;
   modules?: string[];
   prefix?: string;
   target?: string;
@@ -28,6 +33,7 @@ export interface GrubMkImageOptions {
 export const grubMkimage = async ({
   outputCoreFile,
   outputBootFile,
+  biosSetupDiskOffset,
   modules,
   prefix,
   config,
@@ -97,6 +103,18 @@ export const grubMkimage = async ({
             outputBootFile,
           );
         }
+        if (biosSetupDiskOffset) {
+          await grubBiosSetupPrepareCore({
+            diskOffset: biosSetupDiskOffset,
+            outputCoreFile,
+          });
+          if (outputBootFile) {
+            await grubBiosSetupPrepareBoot({
+              diskOffset: biosSetupDiskOffset,
+              outputBootFile,
+            });
+          }
+        }
       } finally {
         await tempFolder.remove();
       }
@@ -109,6 +127,7 @@ export const grubMkimage = async ({
 export const grubMkimageStep = ({
   outputCoreFile: outputCoreFileInContainer,
   outputBootFile: outputBootFileInContainer,
+  biosSetupDiskOffset,
   modules,
   prefix,
   config,
@@ -133,6 +152,7 @@ export const grubMkimageStep = ({
     await grubMkimage({
       outputCoreFile,
       outputBootFile,
+      biosSetupDiskOffset,
       modules,
       prefix,
       config,
@@ -150,6 +170,7 @@ export const grubMkimageStep = ({
       JSON.stringify({
         outputCoreFile: outputCoreFileInContainer,
         outputBootFile: outputBootFileInContainer,
+        biosSetupDiskOffset,
         modules,
         prefix,
         config,
