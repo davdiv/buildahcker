@@ -12,6 +12,7 @@ import {
   writePartitions,
 } from "../src/alpine/partitions";
 import { apkCache, containerCache, logger, tempFolder } from "./testUtils";
+import { stripVTControlCharacters } from "util";
 
 it("grub bios installation should succeed", { timeout: 120000 }, async () => {
   const source = "alpine";
@@ -98,7 +99,9 @@ it("grub bios installation should succeed", { timeout: 120000 }, async () => {
     containerCache,
     logger,
   });
-  expect(result.stdout.toString("utf8")).toContain("BUILDAHCKER-SUCCESS");
+  expect(stripVTControlCharacters(result.stdout.toString("utf8"))).toContain(
+    "BUILDAHCKER-SUCCESS",
+  );
 });
 
 it("grub efi installation should succeed", { timeout: 120000 }, async () => {
@@ -195,5 +198,7 @@ it("grub efi installation should succeed", { timeout: 120000 }, async () => {
     containerCache,
     logger,
   });
-  expect(result.stdout.toString("utf8")).toContain("BUILDAHCKER-SUCCESS");
+  expect(stripVTControlCharacters(result.stdout.toString("utf8"))).toContain(
+    "BUILDAHCKER-SUCCESS",
+  );
 });

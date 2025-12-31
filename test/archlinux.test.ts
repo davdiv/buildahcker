@@ -17,6 +17,7 @@ import {
   useFilesInImages,
   veritytab,
 } from "../src";
+import { stripVTControlCharacters } from "util";
 
 it(
   "should work to create an archlinux system",
@@ -140,9 +141,9 @@ WantedBy=multi-user.target
         containerCache,
         logger,
       });
-      expect(result.stdout.toString("utf8")).toContain(
-        "BUILDAHCKER-TEST-SUCCESS",
-      );
+      expect(
+        stripVTControlCharacters(result.stdout.toString("utf8")),
+      ).toContain("BUILDAHCKER-TEST-SUCCESS");
     });
   },
 );

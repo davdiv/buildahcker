@@ -14,6 +14,7 @@ import {
   prepareApkPackagesAndRun,
 } from "../src/alpine";
 import { apkCache, containerCache, logger } from "./testUtils";
+import { stripVTControlCharacters } from "util";
 
 it(
   "should work to configure a/b partitions",
@@ -72,9 +73,9 @@ it(
         containerCache,
         logger,
       });
-      expect(resultBios.stdout.toString("utf8")).toContain(
-        "BUILDAHCKER-SUCCESS-BIOS",
-      );
+      expect(
+        stripVTControlCharacters(resultBios.stdout.toString("utf8")),
+      ).toContain("BUILDAHCKER-SUCCESS-BIOS");
       const resultEfi = await prepareApkPackagesAndRun({
         apkPackages,
         command: [
@@ -92,9 +93,9 @@ it(
         containerCache,
         logger,
       });
-      expect(resultEfi.stdout.toString("utf8")).toContain(
-        "BUILDAHCKER-SUCCESS-UEFI",
-      );
+      expect(
+        stripVTControlCharacters(resultEfi.stdout.toString("utf8")),
+      ).toContain("BUILDAHCKER-SUCCESS-UEFI");
     });
   },
 );
