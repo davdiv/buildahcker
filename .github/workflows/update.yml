@@ -1,0 +1,31 @@
+name: update
+
+on:
+  schedule:
+    - cron: "52 5 1 * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set Node.js version
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          cache: npm
+      - run: npm ci
+      - run: npx npm-check-updates -u --peer
+      - run: npm install --ignore-scripts
+      - run: npm update --ignore-scripts
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8.0.0
+        with:
+          commit-message: "Update dependencies"
+          branch: dependencies
+          title: Update dependencies
+          body: Update dependencies
