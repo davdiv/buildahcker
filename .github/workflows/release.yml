@@ -44,8 +44,5 @@ jobs:
         uses: actions/deploy-pages@v4
       - run: git push origin main v${{ inputs.version }}
         if: inputs.version != 'doconly'
-      - run: |
-          npm whoami
-          npm publish --provenance --access=public
+      - run: npm publish --provenance --access=public
         if: inputs.version != 'doconly'
-        name: "npm publish"
