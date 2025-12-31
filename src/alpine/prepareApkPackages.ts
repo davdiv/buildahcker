@@ -14,8 +14,7 @@ export interface PrepareApkPackagesOptions {
   containerCache?: ContainerCache;
 }
 
-export interface PrepareApkPackagesAndRunOptions
-  extends PrepareApkPackagesOptions {
+export interface PrepareApkPackagesAndRunOptions extends PrepareApkPackagesOptions {
   existingSource?: ImageOrContainer;
   command: string[];
   buildahRunOptions: string[];
