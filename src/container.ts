@@ -125,14 +125,15 @@ export class Container implements StepExecutor {
     );
   }
 
-  async commit({ timestamp = Date.now() }: CommitOptions = {}) {
+  async commit({ timestamp }: CommitOptions = {}) {
     return (
       await exec(
         [
           "buildah",
           "commit",
-          "--timestamp",
-          `${Math.round(timestamp / 1000)}`,
+          ...(timestamp != null
+            ? ["--timestamp", `${Math.round(timestamp / 1000)}`]
+            : []),
           this.name,
         ],
         this.options,
