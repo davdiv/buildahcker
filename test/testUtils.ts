@@ -1,6 +1,6 @@
 import { lstat, mkdir, mkdtemp, rm } from "fs/promises";
 import { join } from "path";
-import { beforeEach } from "vitest";
+import { beforeEach, expect } from "vitest";
 import type { ContainerCache } from "../src";
 import { FSContainerCache, WritableBuffer, temporaryContainer } from "../src";
 
@@ -48,3 +48,9 @@ export const statFileInImage = async (imageId: string, path: string) =>
     },
     { logger },
   );
+
+export const checkNonEmptyFileExists = async (file: string) => {
+  const res = await lstat(file);
+  expect(res.isFile()).toBe(true);
+  expect(res.size).toBeGreaterThan(1);
+};

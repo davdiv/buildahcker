@@ -1,5 +1,5 @@
 import { close, open, read } from "fs";
-import { mkdir, readdir, rmdir, writeFile } from "fs/promises";
+import { mkdir, readdir, readFile, rmdir, writeFile } from "fs/promises";
 import { dirname, resolve } from "path";
 import { promisify } from "util";
 
@@ -15,6 +15,34 @@ export const removeIfEmpty = async (directory: string) => {
     }
   }
 };
+
+export const readOrCreateFile = async (
+  filePath: string,
+  defaultContent: () => Buffer | Promise<Buffer>,
+): Promise<Buffer> => {
+  try {
+    return await readFile(filePath);
+  } catch (error: any) {
+    if (error.code === "ENOENT") {
+      const content = await defaultContent();
+      await mkdir(dirname(filePath), { recursive: true });
+      await writeFile(filePath, content);
+      return content;
+    }
+    throw error;
+  }
+};
+
+export const readOrCreateStringFile = async (
+  filePath: string,
+  defaultContent: () => string | Promise<string>,
+  encoding?: BufferEncoding,
+): Promise<string> =>
+  (
+    await readOrCreateFile(filePath, async () =>
+      Buffer.from(await defaultContent(), encoding),
+    )
+  ).toString(encoding);
 
 export const prepareOutputFile = async (outputFile: string) => {
   outputFile = resolve(outputFile);

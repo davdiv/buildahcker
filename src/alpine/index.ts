@@ -13,3 +13,6 @@ export * from "./erofs";
 export * from "./dmverity";
 export * from "./dracut";
 export * from "./ukify";
+export * from "./openssl";
+export * from "./efitools";
+export * from "./secureboot";
