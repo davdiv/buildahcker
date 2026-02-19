@@ -38,7 +38,7 @@ it(
       },
     );
     await rootBuilder.executeStep([
-      pacmanInstall(["linux", "dracut", "systemd-ukify"], {
+      pacmanInstall(["linux", "dracut", "cpio", "systemd-ukify"], {
         pacmanCache,
       }),
       pacmanRemovePacman([], logger),
